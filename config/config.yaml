@@ -1,0 +1,48 @@
+Network:
+  batch_size: 1
+  lr: 1e-4
+  weight_decay: 0
+  amsgrad: False
+#  resize_shape: [128,150,180] # d, h, w (training data are also stored in d, h, w)
+#  resize_shape: [100,160,160] # d, h, w (training data are also stored in d, h, w). 100*160*160 = 5.5 GB
+#  resize_shape: [115,180,180] # d, h, w (training data are also stored in d, h, w). 115*180*180 (75% of original) = 6 GB
+#  resize_shape: [24,24,24] # d, h, w (training data are also stored in d, h, w). after cropping. multi mode 4-level. 4.7 GB for 48; 3.4 GB for 24
+  resize_shape: [80,80,80] # d, h, w (training data are also stored in d, h, w). after cropping. multi mode 4-level. 3.4 GB for 24
+augmentation:
+  general_spatial_probability: 0.5 # probability of having spatial data augmentation at all
+  general_intensity_probability: 0.5 # probability of having intensity data augmentation at all
+  flip_prob: 0.2 # probability of having flipping augmentation
+  zoom_range: [1, 1.15] # 0.1 means from 0.9 to 1.1
+  zoom_prob: 0.2 # probability of having zooming augmentation [for the moment only zoom in: more than 1]
+  rotation_range: 5 # degrees. 1 = (-1, 1)
+  rotation_prob: -1 # probability of having rotation augmentation [DON'T USE FOR BRATS]
+  shift_range: 1 # pixels. 1 = (-1, 1)
+  shift_prob: -1 # probability of having translation augmentation [DON'T USE FOR BRATS]
+  eladf_control_points: 7
+  eladf_max_displacement: 8
+  elastic_prob: -1 # probability of having elastic deformation augmentation [DON'T USE FOR BRATS]
+  gamma_range: [0, 0.2] # this number changes beta exponent distribution; don't go more than 0.2
+  gamma_prob: 0.2 # probability of having gamma augmentation
+  mu_AWGN: 0.0 # mean of AWGN
+  sigma_AWGN: 0.1 # std of AWGN
+  AWGN_prob: 0.2 # probability of having AWGN augmentation
+  motion_prob: -1 # probability of having random motion augmentation [DON'T USE FOR BRATS]
+  ghosting_prob: -1 # probability of having ghosting augmentation
+  blurring_range: [0, 1] # range of std of Gaussian filter; don't go more than 1
+  blurring_prob: 0.2 # probability of having blurring augmentation
+network_output_path: network_data/
+output_data_path: output_data/
+tb_logs_path: tensor_board_logs/
+stat_log_path: stat_logs
+checkpoint_name: checkpoint.tar
+trained_model_name: trained_model.pth
+
+
+# changeable items:
+file_path: /home/soroosh/Documents/datasets/BraTS20/old_BraTS20/cropped/
+target_dir: /home/soroosh/Documents/Repositories_target_files/federated_he/
+network_save_freq: 600 # based on the batch size, shows the number of batches done; every half an hour is good
+display_stats_freq: 200 # valid freq is equal to this
+display_train_loss_freq: 20
+network_checkpoint_freq: 1
+num_epochs: 250
