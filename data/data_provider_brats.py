@@ -28,7 +28,7 @@ class data_loader_3D(Dataset):
     """
     This is the pipeline based on Pytorch's Dataset and Dataloader
     """
-    def __init__(self, cfg_path, mode='train', modality=2, multimodal=True):
+    def __init__(self, cfg_path, mode='train', modality=2, multimodal=True, site=None):
         """
         Parameters
         ----------
@@ -62,7 +62,10 @@ class data_loader_3D(Dataset):
         elif mode == 'test':
             self.subset_df = org_df[org_df['soroosh_split'] == 'test']
 
+        if not site == None:
+            self.subset_df = self.subset_df[self.subset_df['site'] == site]
         self.file_path_list = list(self.subset_df['pat_num'])
+
 
 
 

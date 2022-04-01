@@ -13,7 +13,7 @@ augmentation:
   general_intensity_probability: 0.5 # probability of having intensity data augmentation at all
   flip_prob: 0.2 # probability of having flipping augmentation
   zoom_range: [1, 1.15] # 0.1 means from 0.9 to 1.1
-  zoom_prob: 0.2 # probability of having zooming augmentation [for the moment only zoom in: more than 1]
+  zoom_prob: -1 # probability of having zooming augmentation [for the moment only zoom in: more than 1]
   rotation_range: 5 # degrees. 1 = (-1, 1)
   rotation_prob: -1 # probability of having rotation augmentation [DON'T USE FOR BRATS]
   shift_range: 1 # pixels. 1 = (-1, 1)
@@ -29,7 +29,7 @@ augmentation:
   motion_prob: -1 # probability of having random motion augmentation [DON'T USE FOR BRATS]
   ghosting_prob: -1 # probability of having ghosting augmentation
   blurring_range: [0, 1] # range of std of Gaussian filter; don't go more than 1
-  blurring_prob: 0.2 # probability of having blurring augmentation
+  blurring_prob: -1 # probability of having blurring augmentation
 network_output_path: network_data/
 output_data_path: output_data/
 tb_logs_path: tensor_board_logs/
@@ -41,8 +41,6 @@ trained_model_name: trained_model.pth
 # changeable items:
 file_path: /home/soroosh/Documents/datasets/BraTS20/old_BraTS20/cropped/
 target_dir: /home/soroosh/Documents/Repositories_target_files/federated_he/
-network_save_freq: 600 # based on the batch size, shows the number of batches done; every half an hour is good
-display_stats_freq: 200 # valid freq is equal to this
-display_train_loss_freq: 20
-network_checkpoint_freq: 1
-num_epochs: 250
+network_save_freq: 20 # based on the batch size, shows the number of epochs done; every half an hour is good
+display_stats_freq: 1 # valid freq is equal to this
+num_epochs: 1000

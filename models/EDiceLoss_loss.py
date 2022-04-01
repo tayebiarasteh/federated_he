@@ -6,6 +6,8 @@ EDiceLoss_loss.py
 
 Dice loss (multi label) tailored to Brats needs.
 """
+import pdb
+
 import torch
 import torch.nn as nn
 
@@ -51,17 +53,17 @@ class EDiceLoss(nn.Module):
 
     def forward(self, inputs, target):
         dice = 0
-        for i in range(target.size(1)):
+        for i in range(target.shape[1]):
             dice = dice + self.binary_dice(inputs[:, i, ...], target[:, i, ...], i)
 
-        final_dice = dice / target.size(1)
+        final_dice = dice / target.shape[1]
         return final_dice
 
     def metric(self, inputs, target):
         dices = []
-        for j in range(target.size(0)):
+        for j in range(target.shape[0]):
             dice = []
-            for i in range(target.size(1)):
+            for i in range(target.shape[1]):
                 dice.append(self.binary_dice(inputs[j, i], target[j, i], i, True))
             dices.append(dice)
         return dices
