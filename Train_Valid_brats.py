@@ -15,9 +15,12 @@ from tqdm import tqdm
 import torchmetrics
 import torch.nn.functional as F
 import syft as sy
+import copy
 
 from config.serde import read_config, write_config
 from data.augmentation_brats import random_augment
+from models.EDiceLoss_loss import EDiceLoss
+from models.UNet3D import UNet3D
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -257,44 +260,32 @@ class Training:
         """
         self.params = read_config(self.cfg_path)
 
-        print('preparing the workers and their data...\n')
         # create a couple workers
         client1 = sy.VirtualWorker(hook, id="client1")
         client2 = sy.VirtualWorker(hook, id="client2")
         client3 = sy.VirtualWorker(hook, id="client3")
         secure_worker = sy.VirtualWorker(hook, id="secure_worker")
 
-        client1.clear_objects()
-        client2.clear_objects()
-        client3.clear_objects()
-        secure_worker.clear_objects()
+        # client1.clear_objects()
+        # client2.clear_objects()
+        # client3.clear_objects()
+        # secure_worker.clear_objects()
 
         client1.add_workers([client2, client3, secure_worker])
         client2.add_workers([client1, client3, secure_worker])
         client3.add_workers([client1, client2, secure_worker])
         secure_worker.add_workers([client1, client2, client3])
 
-        # train_loader_client1 = []
+        # newtrain_loader_client1 = []
         # for batch_idx, (data, target) in enumerate(tqdm(train_loader[0])):
         #     data = data.send(client1)
         #     target = target.send(client1)
-        #     train_loader_client1.append((data, target))
+        #     newtrain_loader_client1.append((data, target))
         # print('\nclient 1 done!')
         #
-        # train_loader_client2 = []
-        # for batch_idx, (data, target) in enumerate(tqdm(train_loader[2])):
-        #     data = data.send(client2)
-        #     target = target.send(client2)
-        #     train_loader_client2.append((data, target))
-        # print('\nclient 2 done!')
-        #
-        # train_loader_client3 = []
-        # for batch_idx, (data, target) in enumerate(train_loader[2]):
-        #     data = data.send(client3)
-        #     target = target.send(client3)
-        #     train_loader_client3.append((data, target))
-
-        print('\nall done!')
+        state_dict_list = []
+        for name in self.model.state_dict():
+            state_dict_list.append(name)
 
         total_start_time = time.time()
         for epoch in range(self.num_epochs - self.epoch):
@@ -303,36 +294,101 @@ class Training:
             start_time = time.time()
             self.model.train()
 
+            client1.clear_objects()
+            client2.clear_objects()
+            client3.clear_objects()
+            secure_worker.clear_objects()
+
+            # model_client1 = copy.deepcopy(self.model).send(client1)
+            # model_client2 = copy.deepcopy(self.model).send(client2)
+            # model_client3 = copy.deepcopy(self.model).send(client3)
+
+            # print('self model:', self.model.output_block.conv_out.weight.data.sum().item())
+
+            # model_client1 = self.model.copy()
+            # model_client2 = self.model.copy()
+            # model_client3 = self.model.copy()
             model_client1 = self.model.copy().send(client1)
             model_client2 = self.model.copy().send(client2)
             model_client3 = self.model.copy().send(client3)
 
+            # print('model_client1:', model_client1.output_block.conv_out.weight.data.sum().clone().get().item())
+
+            # print(len(client1._objects))
+            # print(len(client2._objects))
+
             optimizer_client1 = torch.optim.Adam(model_client1.parameters(), lr=float(self.params['Network']['lr']),
                                          weight_decay=float(self.params['Network']['weight_decay']),
-                                         amsgrad=self.params['Network']['amsgrad'])
+                                                 amsgrad=self.params['Network']['amsgrad'])
             optimizer_client2 = torch.optim.Adam(model_client2.parameters(), lr=float(self.params['Network']['lr']),
                                          weight_decay=float(self.params['Network']['weight_decay']),
-                                         amsgrad=self.params['Network']['amsgrad'])
+                                                 amsgrad=self.params['Network']['amsgrad'])
             optimizer_client3 = torch.optim.Adam(model_client3.parameters(), lr=float(self.params['Network']['lr']),
                                          weight_decay=float(self.params['Network']['weight_decay']),
-                                         amsgrad=self.params['Network']['amsgrad'])
+                                                 amsgrad=self.params['Network']['amsgrad'])
 
             model_client1, loss_client1 = self.train_epoch_federated(train_loader[0], optimizer_client1, model_client1)
             model_client2, loss_client2 = self.train_epoch_federated(train_loader[1], optimizer_client2, model_client2)
             model_client3, loss_client3 = self.train_epoch_federated(train_loader[2], optimizer_client3, model_client3)
 
+
+            # loss_client1 = 0
+            # loss_client2 = 0
+            # loss_client3 = 0
             model_client1.move(secure_worker)
             model_client2.move(secure_worker)
             model_client3.move(secure_worker)
+            # model_client1 = model_client1.get()
+            # pdb.set_trace()
+            # model_client1 = model_client1.to(self.device)
+            # self.model.load_state_dict(model_client1.state_dict())
+            # pdb.set_trace()
+            # self.model = model_client1.copy()
+            # self.model.load_state_dict(model_client1.state_dict())
 
-            print('before:', self.model.output_block.conv_out.weight.data.sum().item())
+            # model = torch.nn.Linear(2,1)
+            # model2 = torch.nn.Linear(2,1)
+            # # for name, param in model.named_parameters():
+            # #     pdb.set_trace()
+            # #     asd=234
+            # print(model.weight.data)
+            # print(model.bias.data)
+            # print(model2.weight.data)
+            # print(model2.bias.data)
+            # model2 = model2.send(client1)
+            #
+            # with torch.no_grad():
+            #     for param, param2 in zip(model.parameters(), model2.parameters()):
+            #         param.set_((param2 +1).get())
+            #
 
-            with torch.no_grad():
-                for param, param1, param2, param3 in zip(self.model.parameters(), model_client1.parameters(),
-                                                         model_client2.parameters(), model_client3.parameters()):
-                    param.data = ((param1.data + param2.data + param3.data) / 3).get()
+            # pdb.set_trace()
+            temp_dict = {}
+            for weightbias in state_dict_list:
+                # model_temp.state_dict()[weightbias] = model_client1.state_dict()[weightbias]
+                # temp_dict[weightbias] = (model_client1.state_dict()[weightbias] + model_client2.state_dict()[weightbias] + model_client3.state_dict()[weightbias]) / 3
+                # temp_dict[weightbias] = model_client1.state_dict()[weightbias].clone().get()
+                temp_dict[weightbias] = ((model_client1.state_dict()[weightbias] + model_client2.state_dict()[weightbias] + model_client3.state_dict()[weightbias]) / 3).clone().get()
 
-            print('after:', self.model.output_block.conv_out.weight.data.sum().item())
+            self.model.load_state_dict(temp_dict)
+            # model_client1.state_dict()['input_block.in_double_conv1.conv.0.bias'] = name
+            # with torch.no_grad():
+            #     for (name, param), (name1, param1), (name2, param2), (name3, param3) in zip(self.model.named_parameters(), model_client1.named_parameters(), model_client2.named_parameters(), model_client3.named_parameters()):
+            #         print(name == name1, name == name2)
+            #         pdb.set_trace()
+            #
+            #         param.set_(((param1 + param2 + param3) / 3).get())
+
+            # print('model_client1 after:', model_client1.output_block.conv_out.weight.data.sum().clone().get().item())
+
+            # with torch.no_grad():
+            #     for param, param1, param2, param3 in zip(self.model.parameters(), model_client1.parameters(), model_client2.parameters(), model_client3.parameters()):
+            #         param.set_(param1)
+                    # param.set_((param1 + param2 + param3) / 3)
+                    # param.set_(((param1 + param2 + param3) / 3).get())
+                    # param.set_((param1).get())
+
+            # print('self model after:', self.model.output_block.conv_out.weight.data.sum().item())
 
             # train loss just as an average of client losses
             train_loss = (loss_client1 + loss_client2 + loss_client3) / 3

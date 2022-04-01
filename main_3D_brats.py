@@ -67,10 +67,12 @@ def main_train_3D(global_config_path="/home/soroosh/Documents/Repositories/feder
     model = UNet3D(n_out_classes=3) # for multi label
 
     loss_function = EDiceLoss # for multi label
-    optimizer = torch.optim.Adam(model.parameters(), lr=float(params['Network']['lr']),
-                                 weight_decay=float(params['Network']['weight_decay']), amsgrad=params['Network']['amsgrad'])
+    optimizer = torch.optim.SGD(model.parameters(), lr=float(params['Network']['lr']),
+                                 weight_decay=float(params['Network']['weight_decay']))
+    # optimizer = torch.optim.Adam(model.parameters(), lr=float(params['Network']['lr']),
+    #                              weight_decay=float(params['Network']['weight_decay']), amsgrad=params['Network']['amsgrad'])
 
-    train_dataset = data_loader_3D(cfg_path=cfg_path, mode='train', modality=modality)
+    train_dataset = data_loader_3D(cfg_path=cfg_path, mode='train', site='site-1')
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=params['Network']['batch_size'],
                                                pin_memory=True, drop_last=True, shuffle=True, num_workers=10)
     if valid:
@@ -128,6 +130,8 @@ def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Reposito
     model = UNet3D(n_out_classes=3) # for multi label
 
     loss_function = EDiceLoss # for multi label
+    # optimizer = torch.optim.SGD(model.parameters(), lr=float(params['Network']['lr']),
+    #                              weight_decay=float(params['Network']['weight_decay']))
     optimizer = torch.optim.Adam(model.parameters(), lr=float(params['Network']['lr']),
                                  weight_decay=float(params['Network']['weight_decay']), amsgrad=params['Network']['amsgrad'])
 
@@ -140,7 +144,6 @@ def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Reposito
     train_dataset_client3 = data_loader_3D(cfg_path=cfg_path, mode='train', site='site-3')
     train_loader_client3 = torch.utils.data.DataLoader(dataset=train_dataset_client3, batch_size=params['Network']['batch_size'],
                                                pin_memory=True, drop_last=True, shuffle=False, num_workers=4)
-
 
     if valid:
         valid_dataset = data_loader_3D(cfg_path=cfg_path, mode='valid')
@@ -156,7 +159,7 @@ def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Reposito
     else:
         trainer.setup_model(model=model, optimiser=optimizer,
                         loss_function=loss_function, weight=None)
-    trainer.training_setup_federated(train_loader=train_loader, valid_loader=valid_loader)
+    trainer.training_setup_federated(train_loader, valid_loader=valid_loader)
 
 
 
@@ -321,11 +324,11 @@ def main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/fed
 
 
 if __name__ == '__main__':
-    # delete_experiment(experiment_name='federatedtest', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
+    delete_experiment(experiment_name='federated_full_3client_4levelunet24_flip_gamma_AWGN_lr1e4_80_80_80', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
     # main_train_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #               valid=True, resume=False, augment=True, experiment_name='4levelunet24_flip_gamma_AWGN_central_full_lr1e4_80_80_80')
+    #               valid=True, resume=False, augment=False, experiment_name='federated_full_3client_4levelunet24_flip_gamma_AWGN_lr1e4_80_80_80')
     main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-                  valid=True, resume=False, augment=True, experiment_name='federated_full_3client_4levelunet24_flip_gamma_AWGN_lr1e4_80_80_80')
+                  valid=True, resume=False, augment=False, experiment_name='federated_full_3client_4levelunet24_flip_gamma_AWGN_lr1e4_80_80_80')
     # main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
     #             experiment_name='4levelunet24_flip_gamma_AWGN_blur_zoomin_central_full_lr1e4_80_80_80', tta=False)
     # main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
