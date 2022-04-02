@@ -57,17 +57,6 @@ class Prediction:
 
 
 
-    def setup_model_federated(self, model, model_file_name=None):
-        if model_file_name == None:
-            model_file_name = self.params['trained_model_name']
-        self.model = model.to(self.device)
-
-        state_dict = torch.load(os.path.join(self.params['target_dir'], self.params['network_output_path'], model_file_name))
-        self.model.load_state_dict(state_dict['model'])
-        # self.model.load_state_dict(state_dict)
-
-
-
     def evaluate_3D(self, test_loader):
         """Evaluation with metrics epoch
         Returns
@@ -199,15 +188,15 @@ class Prediction:
                 output_back3 = self.model(transformed_image)
                 output_back3 = output_back3.cpu()
 
-                # augmentation
-                transformed_image, transform = self.tta_performer(image, 'blur')
-                transformed_image = transformed_image.to(self.device)
-                output_back4 = self.model(transformed_image)
-                output_back4 = output_back4.cpu()
+                # # augmentation
+                # transformed_image, transform = self.tta_performer(image, 'blur')
+                # transformed_image = transformed_image.to(self.device)
+                # output_back4 = self.model(transformed_image)
+                # output_back4 = output_back4.cpu()
 
                 # ensembling the predictions
                 output = (output_normal + output_normal + output_back1 + output_back2 +
-                          output_back3 + output_back4 ) / 6
+                          output_back3 ) / 5
 
                 output = output.to(self.device)
 
