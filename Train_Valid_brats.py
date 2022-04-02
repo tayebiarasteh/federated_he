@@ -19,8 +19,6 @@ import copy
 
 from config.serde import read_config, write_config
 from data.augmentation_brats import random_augment
-from models.EDiceLoss_loss import EDiceLoss
-from models.UNet3D import UNet3D
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -255,8 +253,16 @@ class Training:
 
 
 
-    def training_setup_federated(self, train_loader, valid_loader=None):
+    def training_setup_federated(self, train_loader, valid_loader=None, HE=False):
         """
+
+        Parameters
+        ----------
+        train_loader
+        valid_loader
+
+        HE: bool
+            if we want to have homomorphic encryption when aggregating the weights
         """
         self.params = read_config(self.cfg_path)
 
@@ -271,13 +277,6 @@ class Training:
         client3.add_workers([client1, client2, secure_worker])
         secure_worker.add_workers([client1, client2, client3])
 
-        # newtrain_loader_client1 = []
-        # for batch_idx, (data, target) in enumerate(tqdm(train_loader[0])):
-        #     data = data.send(client1)
-        #     target = target.send(client1)
-        #     newtrain_loader_client1.append((data, target))
-        # print('\nclient 1 done!')
-        #
         state_dict_list = []
         for name in self.model.state_dict():
             state_dict_list.append(name)
@@ -312,14 +311,26 @@ class Training:
             model_client2, loss_client2 = self.train_epoch_federated(train_loader[1], optimizer_client2, model_client2)
             model_client3, loss_client3 = self.train_epoch_federated(train_loader[2], optimizer_client3, model_client3)
 
-            model_client1.move(secure_worker)
-            model_client2.move(secure_worker)
-            model_client3.move(secure_worker)
-
             temp_dict = {}
-            for weightbias in state_dict_list:
-                temp_dict[weightbias] = ((model_client1.state_dict()[weightbias] + model_client2.state_dict()[weightbias] +
-                                          model_client3.state_dict()[weightbias]) / 3).clone().get()
+            if HE:
+                for weightbias in state_dict_list:
+                    temp_one_param_list = []
+                    temp_one_param_list.append(model_client1.state_dict()[weightbias].fix_precision().share(
+                        client1, client2, client3, crypto_provider=secure_worker).get())
+                    temp_one_param_list.append(model_client2.state_dict()[weightbias].fix_precision().share(
+                        client1, client2, client3, crypto_provider=secure_worker).get())
+                    temp_one_param_list.append(model_client3.state_dict()[weightbias].fix_precision().share(
+                        client1, client2, client3, crypto_provider=secure_worker).get())
+                    temp_dict[weightbias] = (temp_one_param_list[0] + temp_one_param_list[1] +
+                                             temp_one_param_list[2]).get().float_precision() / 3
+            else:
+                model_client1.move(secure_worker)
+                model_client2.move(secure_worker)
+                model_client3.move(secure_worker)
+                for weightbias in state_dict_list:
+                    temp_dict[weightbias] = ((model_client1.state_dict()[weightbias] + model_client2.state_dict()[weightbias] +
+                                              model_client3.state_dict()[weightbias]) / 3).clone().get()
+
             self.model.load_state_dict(temp_dict)
 
             # train loss just as an average of client losses

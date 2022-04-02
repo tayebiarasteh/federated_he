@@ -28,7 +28,7 @@ warnings.filterwarnings('ignore')
 
 
 
-def main_train_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml", valid=False,
+def main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml", valid=False,
                   resume=False, augment=False, experiment_name='name', modality=2):
     """Main function for training + validation for directly 3d-wise
 
@@ -89,8 +89,10 @@ def main_train_3D(global_config_path="/home/soroosh/Documents/Repositories/feder
     trainer.train_epoch(train_loader=train_loader, valid_loader=valid_loader)
 
 
+
+
 def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml", valid=False,
-                  resume=False, augment=False, experiment_name='name', modality=2):
+                  resume=False, augment=False, experiment_name='name', modality=2, HE=False):
     """Main function for training + validation for directly 3d-wise
 
         Parameters
@@ -155,7 +157,8 @@ def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Reposito
     else:
         trainer.setup_model(model=model, optimiser=optimizer,
                         loss_function=loss_function, weight=None)
-    trainer.training_setup_federated(train_loader, valid_loader=valid_loader)
+    trainer.training_setup_federated(train_loader, valid_loader=valid_loader, HE=HE)
+
 
 
 
@@ -210,8 +213,6 @@ def main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/fe
 
 
 
-
-
 def main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
                     experiment_name='name', modality=2, tta=False):
     """Prediction without evaluation for all the images.
@@ -260,8 +261,7 @@ def main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/fed
         segmentation = nib.Nifti1Image(output_sigmoided[0,2], affine=x_input_nifti.affine, header=x_input_nifti.header)
         nib.save(segmentation, os.path.join(params['target_dir'], params['output_data_path'], os.path.basename(path_file).replace('.nii.gz', '-downsampled3-label.nii.gz')))
         input_img = nib.Nifti1Image(img_resized, affine=x_input_nifti.affine, header=x_input_nifti.header)
-        nib.save(input_img, os.path.join(params['target_dir'], params['output_data_path'],
-                                         os.path.basename(path_file).replace('.nii.gz', '-downsampled-image.nii.gz')))
+        nib.save(input_img, os.path.join(params['target_dir'], params['output_data_path'], os.path.basename(path_file).replace('.nii.gz', '-downsampled-image.nii.gz')))
         pdb.set_trace()
 
 
@@ -276,12 +276,12 @@ def main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/fed
 
 
 if __name__ == '__main__':
-    # delete_experiment(experiment_name='federated_full_3client_4levelunet24_flip_gamma_AWGN_lr1e4_80_80_80', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
-    # main_train_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+    delete_experiment(experiment_name='tempppnohe', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
+    # main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
     #               valid=True, resume=False, augment=False, experiment_name='federated_full_3client_4levelunet24_flip_gamma_AWGN_lr1e4_80_80_80')
-    # main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #               valid=True, resume=False, augment=False, experiment_name='federated_full_3client_4levelunet24_flip_gamma_AWGN_lr1e4_80_80_80')
-    main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-                experiment_name='federated_full_3client_no_augment_lr1e4_80_80_80', tta=False)
+    main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+                  valid=True, resume=False, augment=False, experiment_name='tempppnohe', HE=True)
+    # main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+    #             experiment_name='federated_full_3client_no_augment_lr1e4_80_80_80', tta=False)
     # main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
     #             experiment_name='4levelunet24_flip_gamma_AWGN_blur_zoomin_central_full_lr1e4_80_80_80', tta=False)

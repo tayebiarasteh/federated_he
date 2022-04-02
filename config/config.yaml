@@ -4,8 +4,8 @@ Network:
   weight_decay: 0
   amsgrad: False
 #  resize_shape: [24,24,24] # d, h, w (training data are also stored in d, h, w). after cropping. multi mode 4-level. 4.7 GB for 48; 3.4 GB for 24
-#  resize_shape: [80,80,80] # d, h, w (training data are also stored in d, h, w). after cropping. multi mode 4-level. 3.4 GB for 24
-  resize_shape: [130,130,165] # d, h, w (training data are also stored in d, h, w). after cropping.
+  resize_shape: [80,80,80] # d, h, w (training data are also stored in d, h, w). after cropping. multi mode 4-level. 3.4 GB for 24
+#  resize_shape: [120,120,160] # d, h, w (training data are also stored in d, h, w). keep it dividable by 4; in syft padding is not possible
 augmentation:
   general_spatial_probability: 0.5 # probability of having spatial data augmentation at all
   general_intensity_probability: 0.5 # probability of having intensity data augmentation at all
@@ -39,6 +39,6 @@ trained_model_name: trained_model.pth
 # changeable items:
 file_path: /home/soroosh/Documents/datasets/BraTS20/old_BraTS20/cropped/
 target_dir: /home/soroosh/Documents/Repositories_target_files/federated_he/
-network_save_freq: 20 # based on the batch size, shows the number of epochs done; every half an hour is good
+network_save_freq: 10 # based on the batch size, shows the number of epochs done; every half an hour is good
 display_stats_freq: 1 # valid freq is equal to this
 num_epochs: 1000
