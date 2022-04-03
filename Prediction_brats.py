@@ -280,15 +280,27 @@ class Prediction:
             output_normal = self.model(image.to(self.device))
             output_normal = output_normal.cpu()
 
-            # augmentation
+            # augmentation lateral flip
             transformed_image, transform = self.tta_performer(image, 'lateral_flip')
             transformed_image = transformed_image.to(self.device)
             output = self.model(transformed_image)
             output_back1 = transform(output[0].cpu())
             output_back1 = output_back1.unsqueeze(0)
 
-            # augmentation
+            # augmentation interior flip
             transformed_image, transform = self.tta_performer(image, 'interior_flip')
+            transformed_image = transformed_image.to(self.device)
+            output = self.model(transformed_image)
+            output_back2 = transform(output[0].cpu())
+            output_back2 = output_back2.unsqueeze(0)
+
+            # augmentation lateral & interior flip
+            transformed_image, transform = self.tta_performer(image, 'lateral_flip')
+            transformed_image = transformed_image.to(self.device)
+            output = self.model(transformed_image)
+            output_back5 = transform(output[0].cpu())
+            output_back5 = output_back5.unsqueeze(0)
+            transformed_image, transform = self.tta_performer(output_back5, 'interior_flip')
             transformed_image = transformed_image.to(self.device)
             output = self.model(transformed_image)
             output_back5 = transform(output[0].cpu())
@@ -297,17 +309,11 @@ class Prediction:
             # augmentation
             transformed_image, transform = self.tta_performer(image, 'AWGN')
             transformed_image = transformed_image.to(self.device)
-            output_back2 = self.model(transformed_image)
-            output_back2 = output_back2.cpu()
-
-            # augmentation
-            transformed_image, transform = self.tta_performer(image, 'gamma')
-            transformed_image = transformed_image.to(self.device)
             output_back3 = self.model(transformed_image)
             output_back3 = output_back3.cpu()
 
             # augmentation
-            transformed_image, transform = self.tta_performer(image, 'blur')
+            transformed_image, transform = self.tta_performer(image, 'gamma')
             transformed_image = transformed_image.to(self.device)
             output_back4 = self.model(transformed_image)
             output_back4 = output_back4.cpu()

@@ -10,6 +10,8 @@ https://github.com/tayebiarasteh/
 import pdb
 import torchio as tio
 from random import random
+import nibabel as nib
+import numpy as np
 
 from config.serde import read_config
 
@@ -53,7 +55,11 @@ def random_spatial_brats_augmentation(image, label, confg_path='/home/soroosh/Do
     """
     params = read_config(confg_path)
 
-    transform = tio.transforms.RandomFlip(axes='L', flip_probability=params['augmentation']['flip_prob'])
+    transform = tio.transforms.RandomFlip(axes='L', flip_probability=params['augmentation']['lateral_flip_prob'])
+    image = transform(image)
+    label = transform(label)
+
+    transform = tio.transforms.RandomFlip(axes='I', flip_probability=params['augmentation']['interior_flip_prob'])
     image = transform(image)
     label = transform(label)
 
@@ -61,6 +67,10 @@ def random_spatial_brats_augmentation(image, label, confg_path='/home/soroosh/Do
         transform = tio.RandomElasticDeformation(num_control_points=(params['augmentation']['eladf_control_points']),
                                                   max_displacement=(params['augmentation']['eladf_max_displacement']),
                                                   locked_borders=2, image_interpolation='nearest')
+        # segmentation = nib.Nifti1Image(image.numpy()[1], affine=np.eye(4))
+        # nib.save(segmentation, 'org.nii.gz')
+        # segmentation = nib.Nifti1Image(transform(image).numpy()[1], affine=np.eye(4))
+        # nib.save(segmentation, 'trans.nii.gz')
         image = transform(image)
         label = transform(label)
         return image, label

@@ -299,6 +299,15 @@ class Training:
             client_list[4].add_workers([client_list[0], client_list[1], client_list[2], client_list[3], secure_worker])
             secure_worker.add_workers([client_list[0], client_list[1], client_list[2], client_list[3], client_list[4]])
 
+        elif len(train_loader) == 6:
+            client_list[0].add_workers([client_list[1], client_list[2], client_list[3], client_list[4], client_list[5], secure_worker])
+            client_list[1].add_workers([client_list[0], client_list[2], client_list[3], client_list[4], client_list[5], secure_worker])
+            client_list[2].add_workers([client_list[0], client_list[1], client_list[3], client_list[4], client_list[5], secure_worker])
+            client_list[3].add_workers([client_list[0], client_list[1], client_list[2], client_list[4], client_list[5], secure_worker])
+            client_list[4].add_workers([client_list[0], client_list[1], client_list[2], client_list[3], client_list[5], secure_worker])
+            client_list[5].add_workers([client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], secure_worker])
+            secure_worker.add_workers([client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], client_list[5]])
+
         state_dict_list = []
         for name in self.model.state_dict():
             state_dict_list.append(name)
@@ -373,6 +382,22 @@ class Training:
                         temp_dict[weightbias] = (temp_one_param_list[0] + temp_one_param_list[1] + temp_one_param_list[2] +
                                                  temp_one_param_list[3] + temp_one_param_list[4]).get().float_precision() / 5
 
+                    elif len(train_loader) == 6:
+                        temp_one_param_list.append(new_model_client_list[0].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], client_list[5], crypto_provider=secure_worker).get())
+                        temp_one_param_list.append(new_model_client_list[1].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], client_list[5], crypto_provider=secure_worker).get())
+                        temp_one_param_list.append(new_model_client_list[2].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], client_list[5], crypto_provider=secure_worker).get())
+                        temp_one_param_list.append(new_model_client_list[3].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], client_list[5], crypto_provider=secure_worker).get())
+                        temp_one_param_list.append(new_model_client_list[4].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], client_list[5], crypto_provider=secure_worker).get())
+                        temp_one_param_list.append(new_model_client_list[5].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], client_list[5], crypto_provider=secure_worker).get())
+                        temp_dict[weightbias] = (temp_one_param_list[0] + temp_one_param_list[1] + temp_one_param_list[2] +
+                                                 temp_one_param_list[3] + temp_one_param_list[4] + client_list[5]).get().float_precision() / 6
+
             else:
                 for idx in range(len(train_loader)):
                     new_model_client_list[idx].move(secure_worker)
@@ -393,6 +418,8 @@ class Training:
             iteration_hours, iteration_mins, iteration_secs = self.time_duration(start_time, end_time)
             total_hours, total_mins, total_secs = self.time_duration(total_start_time, end_time)
 
+            print('------------------------------------------------------'
+                  '----------------------------------')
             print(f'train epoch {self.epoch} | time: {iteration_hours}h {iteration_mins}m {iteration_secs}s',
                   f'| total: {total_hours}h {total_mins}m {total_secs}s')
 

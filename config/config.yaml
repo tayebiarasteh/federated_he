@@ -9,9 +9,10 @@ Network:
 augmentation:
   general_spatial_probability: 0.5 # probability of having spatial data augmentation at all
   general_intensity_probability: 0.5 # probability of having intensity data augmentation at all
-  flip_prob: 0.2 # probability of having flipping augmentation
+  lateral_flip_prob: 0.2 # probability of having lateral flipping augmentation
+  interior_flip_prob: 0.2 # probability of having interior flipping augmentation
   zoom_range: [1, 1.15] # 0.1 means from 0.9 to 1.1
-  zoom_prob: -1 # probability of having zooming augmentation [for the moment only zoom in: more than 1]
+  zoom_prob: -1 # probability of having zooming augmentation [for the moment only zoom-in: more than 1] [bug in the source code of tio]
   rotation_range: 5 # degrees. 1 = (-1, 1)
   rotation_prob: -1 # probability of having rotation augmentation [DON'T USE FOR BRATS]
   shift_range: 1 # pixels. 1 = (-1, 1)
@@ -22,12 +23,12 @@ augmentation:
   gamma_range: [0, 0.2] # this number changes beta exponent distribution; don't go more than 0.2
   gamma_prob: 0.2 # probability of having gamma augmentation
   mu_AWGN: 0.0 # mean of AWGN
-  sigma_AWGN: 0.1 # std of AWGN
+  sigma_AWGN: 0.03 # std of AWGN; don't go more than 0.03
   AWGN_prob: 0.2 # probability of having AWGN augmentation
   motion_prob: -1 # probability of having random motion augmentation [DON'T USE FOR BRATS]
   ghosting_prob: -1 # probability of having ghosting augmentation
   blurring_range: [0, 1] # range of std of Gaussian filter; don't go more than 1
-  blurring_prob: -1 # probability of having blurring augmentation
+  blurring_prob: -1 # probability of having blurring augmentation [bug in the source code of tio]
 network_output_path: network_data/
 output_data_path: output_data/
 tb_logs_path: tensor_board_logs/
