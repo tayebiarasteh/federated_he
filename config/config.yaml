@@ -3,8 +3,8 @@ Network:
   lr: 1e-4
   weight_decay: 0
   amsgrad: False
-#  resize_shape: [24,24,24] # d, h, w (training data are also stored in d, h, w). after cropping. multi mode 4-level. 4.7 GB for 48; 3.4 GB for 24
-  resize_shape: [80,80,80] # d, h, w (training data are also stored in d, h, w). after cropping. multi mode 4-level. 3.4 GB for 24
+  resize_shape: [24,24,24] # d, h, w (training data are also stored in d, h, w). after cropping. multi mode 4-level. 4.7 GB for 48; 3.4 GB for 24
+#  resize_shape: [80,80,80] # d, h, w (training data are also stored in d, h, w). after cropping. multi mode 4-level. 3.4 GB for 24
 #  resize_shape: [120,120,160] # d, h, w (training data are also stored in d, h, w). keep it dividable by 4; in syft padding is not possible
 augmentation:
   general_spatial_probability: 0.5 # probability of having spatial data augmentation at all

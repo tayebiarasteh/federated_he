@@ -11,7 +11,6 @@ import torch
 import os
 from torch.utils.data import Dataset
 from torch.nn import CrossEntropyLoss
-from torchvision import models
 import numpy as np
 from tqdm import tqdm
 import nibabel as nib
@@ -190,23 +189,32 @@ def main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/fe
         test_F1, test_accuracy, test_specifity, test_sensitivity, test_precision = predictor.evaluate_3D(test_loader)
 
     ### evaluation metrics
-    print(f'\n\t F1 (Dice score): {test_F1.mean().item() * 100:.2f}% | accuracy: {test_accuracy.mean().item() * 100:.2f}%'
+    print(f'\n\t Average Dice score (whole tumor): {test_F1.mean().item() * 100:.2f}% | accuracy: {test_accuracy.mean().item() * 100:.2f}%'
           f' | specifity: {test_specifity.mean().item() * 100:.2f}%'
           f' | recall (sensitivity): {test_sensitivity.mean().item() * 100:.2f}% | precision: {test_precision.mean().item() * 100:.2f}%\n')
 
-    print('Individual F1 scores:')
-    print(f'Class 1: {test_F1[0].item() * 100:.2f}%')
-    print(f'Class 2: {test_F1[1].item() * 100:.2f}%')
-    print(f'Class 3: {test_F1[2].item() * 100:.2f}%\n')
+    print('Individual Dice scores:')
+    print(f'Dice label 1 (necrotic tumor core): {test_F1[0].item() * 100:.2f}%')
+    print(f'Dice label 2 (peritumoral edematous/invaded tissue): {test_F1[1].item() * 100:.2f}%\n')
+    print(f'Dice label 4, i.e., enhancing tumor (ET): {test_F1[2].item() * 100:.2f}%')
+    print(f'Dice average 1 and 4, i.e., tumor core (TC): {(test_F1[0].item() + test_F1[2].item())/2 * 100:.2f}%')
+    print(f'Dice average all 1, 2, 4, i.e., whole tumor (WT): {test_F1.mean().item() * 100:.2f}%\n')
     print('------------------------------------------------------'
           '----------------------------------')
 
     # saving the training and validation stats
     msg = f'----------------------------------------------------------------------------------------\n' \
-          f'\nF1 (Dice score): {test_F1.mean().item() * 100:.2f}% | accuracy: {test_accuracy.mean().item() * 100:.2f}% ' \
+          f' Experiment name: {experiment_name}\n\n' \
+          f' test-time augmentation: {str(tta)} | Number of test images: {str(len(test_loader))}\n' \
+          f'\n  Average Dice score (whole tumor): {test_F1.mean().item() * 100:.2f}% | accuracy: {test_accuracy.mean().item() * 100:.2f}% ' \
           f' | specifity: {test_specifity.mean().item() * 100:.2f}%' \
           f' | recall (sensitivity): {test_sensitivity.mean().item() * 100:.2f}% | precision: {test_precision.mean().item() * 100:.2f}%\n\n' \
-          f' | F1 class 1: {test_F1[0].item() * 100:.2f}% | F1 class 2: {test_F1[1].item() * 100:.2f}% | F1 class 3: {test_F1[2].item() * 100:.2f}%\n\n'
+          f'  Dice label 1 (necrotic tumor core): {test_F1[0].item() * 100:.2f}% | ' \
+          f'Dice label 2 (peritumoral edematous/invaded tissue): {test_F1[1].item() * 100:.2f}%\n\n' \
+          f'- Dice label 4, i.e., enhancing tumor (ET): {test_F1[2].item() * 100:.2f}%\n' \
+          f'- Dice average 1 and 4, i.e., tumor core (TC): {(test_F1[0].item() + test_F1[2].item())/2 * 100:.2f}%\n' \
+          f'- Dice average all 1, 2, 4, i.e., whole tumor (WT): {test_F1.mean().item() * 100:.2f}%\n\n' \
+          f'----------------------------------------------------------------------------------------\n'
 
     with open(os.path.join(params['target_dir'], params['stat_log_path']) + '/test_results', 'a') as f:
         f.write(msg)
@@ -259,7 +267,7 @@ def main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/fed
         segmentation = nib.Nifti1Image(output_sigmoided[0,1], affine=x_input_nifti.affine, header=x_input_nifti.header)
         nib.save(segmentation, os.path.join(params['target_dir'], params['output_data_path'], os.path.basename(path_file).replace('.nii.gz', '-downsampled2-label.nii.gz')))
         segmentation = nib.Nifti1Image(output_sigmoided[0,2], affine=x_input_nifti.affine, header=x_input_nifti.header)
-        nib.save(segmentation, os.path.join(params['target_dir'], params['output_data_path'], os.path.basename(path_file).replace('.nii.gz', '-downsampled3-label.nii.gz')))
+        nib.save(segmentation, os.path.join(params['target_dir'], params['output_data_path'], os.path.basename(path_file).replace('.nii.gz', '-downsampled4-label.nii.gz')))
         input_img = nib.Nifti1Image(img_resized, affine=x_input_nifti.affine, header=x_input_nifti.header)
         nib.save(input_img, os.path.join(params['target_dir'], params['output_data_path'], os.path.basename(path_file).replace('.nii.gz', '-downsampled-image.nii.gz')))
         pdb.set_trace()
@@ -272,15 +280,12 @@ def main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/fed
 
 
 
-
-
-
 if __name__ == '__main__':
     delete_experiment(experiment_name='tempppnohe', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
-    # main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #               valid=True, resume=False, augment=False, experiment_name='federated_full_3client_4levelunet24_flip_gamma_AWGN_lr1e4_80_80_80')
-    main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-                  valid=True, resume=False, augment=False, experiment_name='tempppnohe', HE=True)
+    main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+                  valid=True, resume=False, augment=False, experiment_name='tempppnohe')
+    # main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+    #               valid=True, resume=False, augment=False, experiment_name='tempppnohe', HE=True)
     # main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
     #             experiment_name='federated_full_3client_no_augment_lr1e4_80_80_80', tta=False)
     # main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",

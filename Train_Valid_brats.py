@@ -566,23 +566,34 @@ class Training:
         print(f'\n\tTrain loss: {train_loss:.4f}')
 
         if valid_loss:
-            print(f'\t Val. loss: {valid_loss:.4f} | F1 (Dice score): {valid_F1.mean().item() * 100:.2f}% | accuracy: {valid_accuracy.mean().item() * 100:.2f}%'
+            print(f'\t Val. loss: {valid_loss:.4f} | Average Dice score (whole tumor): {valid_F1.mean().item() * 100:.2f}% | accuracy: {valid_accuracy.mean().item() * 100:.2f}%'
             f' | specifity: {valid_specifity.mean().item() * 100:.2f}%'
             f' | recall (sensitivity): {valid_sensitivity.mean().item() * 100:.2f}% | precision: {valid_precision.mean().item() * 100:.2f}%\n')
 
-            print('Individual F1 scores:')
-            print(f'Class 1: {valid_F1[0].item() * 100:.2f}%')
-            print(f'Class 2: {valid_F1[1].item() * 100:.2f}%')
-            print(f'Class 3: {valid_F1[2].item() * 100:.2f}%\n')
+            # print('Individual F1 scores:')
+            # print(f'Class 1: {valid_F1[0].item() * 100:.2f}%')
+            # print(f'Class 2: {valid_F1[1].item() * 100:.2f}%')
+            # print(f'Class 3: {valid_F1[2].item() * 100:.2f}%\n')
+
+            print('Individual Dice scores:')
+            print(f'Dice label 1 (necrotic tumor core): {valid_F1[0].item() * 100:.2f}%')
+            print(f'Dice label 2 (peritumoral edematous/invaded tissue): {valid_F1[1].item() * 100:.2f}%\n')
+            print(f'Dice label 4, i.e., enhancing tumor (ET): {valid_F1[2].item() * 100:.2f}%')
+            print(f'Dice average 1 and 4, i.e., tumor core (TC): {(valid_F1[0].item() + valid_F1[2].item()) / 2 * 100:.2f}%')
+            print(f'Dice average all 1, 2, 4, i.e., whole tumor (WT): {valid_F1.mean().item() * 100:.2f}%\n')
 
             # saving the training and validation stats
             msg = f'----------------------------------------------------------------------------------------\n' \
                    f'epoch: {self.epoch} | epoch Time: {iteration_hours}h {iteration_mins}m {iteration_secs}s' \
                    f' | total time: {total_hours}h {total_mins}m {total_secs}s\n\n\tTrain loss: {train_loss:.4f} | ' \
-                   f'Val. loss: {valid_loss:.4f} | F1 (Dice score): {valid_F1.mean().item() * 100:.2f}% | accuracy: {valid_accuracy.mean().item() * 100:.2f}% ' \
+                   f'Val. loss: {valid_loss:.4f} | Average Dice score (whole tumor): {valid_F1.mean().item() * 100:.2f}% | accuracy: {valid_accuracy.mean().item() * 100:.2f}% ' \
                    f' | specifity: {valid_specifity.mean().item() * 100:.2f}%' \
                    f' | recall (sensitivity): {valid_sensitivity.mean().item() * 100:.2f}% | precision: {valid_precision.mean().item() * 100:.2f}%\n\n' \
-                   f' | F1 class 1: {valid_F1[0].item() * 100:.2f}% | F1 class 2: {valid_F1[1].item() * 100:.2f}% | F1 class 3: {valid_F1[2].item() * 100:.2f}%\n\n'
+                   f'  Dice label 1 (necrotic tumor core): {valid_F1[0].item() * 100:.2f}% | ' \
+                   f'Dice label 2 (peritumoral edematous/invaded tissue): {valid_F1[1].item() * 100:.2f}%\n\n' \
+                   f'- Dice label 4, i.e., enhancing tumor (ET): {valid_F1[2].item() * 100:.2f}%\n' \
+                   f'- Dice average 1 and 4, i.e., tumor core (TC): {(valid_F1[0].item() + valid_F1[2].item())/2 * 100:.2f}%\n' \
+                   f'- Dice average all 1, 2, 4, i.e., whole tumor (WT): {valid_F1.mean().item() * 100:.2f}%\n\n'
         else:
             msg = f'----------------------------------------------------------------------------------------\n' \
                    f'epoch: {self.epoch} | epoch time: {iteration_hours}h {iteration_mins}m {iteration_secs}s' \
@@ -612,9 +623,9 @@ class Training:
         if valid_loss is not None:
             self.writer.add_scalar('Valid_loss', valid_loss, self.epoch)
             self.writer.add_scalar('Valid_specifity', valid_specifity.mean().item(), self.epoch)
-            self.writer.add_scalar('Valid_F1', valid_F1.mean().item(), self.epoch)
-            self.writer.add_scalar('Valid_F1 class 1', valid_F1[0].item(), self.epoch)
-            self.writer.add_scalar('Valid_F1 class 2', valid_F1[1].item(), self.epoch)
-            self.writer.add_scalar('Valid_F1 class 3', valid_F1[2].item(), self.epoch)
+            self.writer.add_scalar('Valid_F1_average', valid_F1.mean().item(), self.epoch)
+            self.writer.add_scalar('Valid_F1_label_1', valid_F1[0].item(), self.epoch)
+            self.writer.add_scalar('Valid_F1_label_2', valid_F1[1].item(), self.epoch)
+            self.writer.add_scalar('Valid_F1_label_4', valid_F1[2].item(), self.epoch)
             self.writer.add_scalar('Valid_precision', valid_precision.mean().item(), self.epoch)
             self.writer.add_scalar('Valid_recall_sensitivity', valid_sensitivity.mean().item(), self.epoch)
