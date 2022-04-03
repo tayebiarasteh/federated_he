@@ -15,6 +15,8 @@ import pandas as pd
 from tqdm import tqdm
 import h5py
 import nibabel as nib
+import random
+from math import ceil
 
 from config.serde import read_config
 
@@ -105,6 +107,153 @@ class csv_preprocess_brats():
             nib.save(input_img, os.path.join(target_base, 'T1Gd', 'pat' + str(patient).zfill(3), 'pat' + str(patient).zfill(3) + '-seg-label3.nii.gz'))
             nib.save(input_img, os.path.join(target_base, 'T2', 'pat' + str(patient).zfill(3), 'pat' + str(patient).zfill(3) + '-seg-label3.nii.gz'))
             nib.save(input_img, os.path.join(target_base, 'T2-FLAIR', 'pat' + str(patient).zfill(3), 'pat' + str(patient).zfill(3) + '-seg-label3.nii.gz'))
+
+
+    def csv_divider_train_valid_test(self, ratio=0.1, num_clients=3):
+        """
+
+        Parameters
+        ----------
+        ratio: float
+            ratio of dividing to train and valid/test
+            0.1 means 10% valid, 10% test, 80% train
+
+        num_clients: int
+            number of federated clients for training
+        """
+
+        path = '/home/soroosh/Documents/datasets/BraTS20/old_BraTS20/cropped/brats20_master_list.csv'
+        output_df_path = '/home/soroosh/Documents/datasets/BraTS20/old_BraTS20/master_lists/' + str(
+            num_clients) + '_clients/brats20_master_list.csv'
+        os.makedirs(os.path.dirname(output_df_path), exist_ok=True)
+
+        # initiating valid and train dfs
+        final_train_data = pd.DataFrame(
+            columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID', 'BraTS_2017_subject_ID',
+                     'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID', 'BraTS_2019_subject_ID', 'Age', 'Survival_days',
+                     'Extent_of_Resection', 'Grade'])
+        final_valid_data = pd.DataFrame(
+            columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID', 'BraTS_2017_subject_ID',
+                     'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID', 'BraTS_2019_subject_ID', 'Age', 'Survival_days',
+                     'Extent_of_Resection', 'Grade'])
+        final_test_data = pd.DataFrame(
+            columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID', 'BraTS_2017_subject_ID',
+                     'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID', 'BraTS_2019_subject_ID', 'Age', 'Survival_days',
+                     'Extent_of_Resection', 'Grade'])
+
+        final_all_data = pd.DataFrame(
+            columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID', 'BraTS_2017_subject_ID',
+                     'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID', 'BraTS_2019_subject_ID', 'Age', 'Survival_days',
+                     'Extent_of_Resection', 'Grade'])
+
+        df = pd.read_csv(path, sep=',')
+
+        subject_list = df['BraTS_2020_subject_ID'].unique().tolist()
+        random.shuffle(subject_list)
+        val_num = ceil(len(subject_list) / (1 / ratio))
+
+        test_subjects = subject_list[:val_num]
+        valid_subjects = subject_list[val_num:2 * val_num]
+        train_subjects = subject_list[2 * val_num:]
+
+        # adding files to train
+        for subject in train_subjects:
+            selected_df = df[df['BraTS_2020_subject_ID'] == subject]
+            tempp = pd.DataFrame([[selected_df['pat_num'].values[0], 'train', selected_df['site'].values[0],
+                                   selected_df['BraTS_2020_subject_ID'].values[0],
+                                   selected_df['BraTS_2017_subject_ID'].values[0],
+                                   selected_df['BraTS_2018_subject_ID'].values[0],
+                                   selected_df['TCGA_TCIA_subject_ID'].values[0],
+                                   selected_df['BraTS_2019_subject_ID'].values[0], selected_df['Age'].values[0],
+                                   selected_df['Survival_days'].values[0], selected_df['Extent_of_Resection'].values[0],
+                                   selected_df['Grade'].values[0]]],
+                                 columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID',
+                                          'BraTS_2017_subject_ID', 'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID',
+                                          'BraTS_2019_subject_ID', 'Age', 'Survival_days', 'Extent_of_Resection',
+                                          'Grade'])
+            final_train_data = final_train_data.append(tempp)
+
+        # adding files to valid
+        for subject in valid_subjects:
+            selected_df = df[df['BraTS_2020_subject_ID'] == subject]
+            tempp = pd.DataFrame([[selected_df['pat_num'].values[0], 'valid', 'site-valid',
+                                   selected_df['BraTS_2020_subject_ID'].values[0],
+                                   selected_df['BraTS_2017_subject_ID'].values[0],
+                                   selected_df['BraTS_2018_subject_ID'].values[0],
+                                   selected_df['TCGA_TCIA_subject_ID'].values[0],
+                                   selected_df['BraTS_2019_subject_ID'].values[0], selected_df['Age'].values[0],
+                                   selected_df['Survival_days'].values[0], selected_df['Extent_of_Resection'].values[0],
+                                   selected_df['Grade'].values[0]]],
+                                 columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID',
+                                          'BraTS_2017_subject_ID', 'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID',
+                                          'BraTS_2019_subject_ID', 'Age', 'Survival_days', 'Extent_of_Resection',
+                                          'Grade'])
+            final_valid_data = final_valid_data.append(tempp)
+
+        # adding files to test
+        for subject in test_subjects:
+            selected_df = df[df['BraTS_2020_subject_ID'] == subject]
+            tempp = pd.DataFrame([[selected_df['pat_num'].values[0], 'test', 'site-test',
+                                   selected_df['BraTS_2020_subject_ID'].values[0],
+                                   selected_df['BraTS_2017_subject_ID'].values[0],
+                                   selected_df['BraTS_2018_subject_ID'].values[0],
+                                   selected_df['TCGA_TCIA_subject_ID'].values[0],
+                                   selected_df['BraTS_2019_subject_ID'].values[0], selected_df['Age'].values[0],
+                                   selected_df['Survival_days'].values[0], selected_df['Extent_of_Resection'].values[0],
+                                   selected_df['Grade'].values[0]]],
+                                 columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID',
+                                          'BraTS_2017_subject_ID', 'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID',
+                                          'BraTS_2019_subject_ID', 'Age', 'Survival_days', 'Extent_of_Resection',
+                                          'Grade'])
+            final_test_data = final_test_data.append(tempp)
+
+        per_client_images_num = ceil(len(final_train_data) / num_clients)
+
+        subject_list = final_train_data['BraTS_2020_subject_ID'].unique().tolist()
+        random.shuffle(subject_list)
+
+        client_list = []
+        for idx in range(num_clients):
+            client_list.append(subject_list[idx * per_client_images_num:(idx + 1) * per_client_images_num])
+
+        # initializing client dfs
+        final_client_train_data_list = []
+        for idx in range(num_clients):
+            final_client_train_data_list.append(pd.DataFrame(
+                columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID', 'BraTS_2017_subject_ID',
+                         'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID', 'BraTS_2019_subject_ID', 'Age',
+                         'Survival_days',
+                         'Extent_of_Resection', 'Grade']))
+
+        # adding files to clients
+        for idx, client in enumerate(client_list):
+            for subject in client:
+                selected_df = final_train_data[final_train_data['BraTS_2020_subject_ID'] == subject]
+                tempp = pd.DataFrame([[selected_df['pat_num'].values[0], 'train', 'site-' + str(idx + 1),
+                                       selected_df['BraTS_2020_subject_ID'].values[0],
+                                       selected_df['BraTS_2017_subject_ID'].values[0],
+                                       selected_df['BraTS_2018_subject_ID'].values[0],
+                                       selected_df['TCGA_TCIA_subject_ID'].values[0],
+                                       selected_df['BraTS_2019_subject_ID'].values[0], selected_df['Age'].values[0],
+                                       selected_df['Survival_days'].values[0],
+                                       selected_df['Extent_of_Resection'].values[0], selected_df['Grade'].values[0]]],
+                                     columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID',
+                                              'BraTS_2017_subject_ID', 'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID',
+                                              'BraTS_2019_subject_ID', 'Age', 'Survival_days', 'Extent_of_Resection',
+                                              'Grade'])
+                final_client_train_data_list[idx] = final_client_train_data_list[idx].append(tempp)
+
+        # adding files to clients
+        for idx, client in enumerate(final_client_train_data_list):
+            final_all_data = final_all_data.append(client)
+
+        final_all_data = final_all_data.append(final_valid_data)
+        final_all_data = final_all_data.append(final_test_data)
+
+        final_all_data = final_all_data.sort_values(['pat_num'])
+
+        final_all_data.to_csv(output_df_path, sep=',', index=False)
+
 
 
 class cropper():
@@ -279,7 +428,7 @@ class cropper():
 
 
 if __name__ == '__main__':
-    # handler = csv_preprocess_mimic()
-    # handler.hd5_to_nifti()
-    crroppper = cropper()
-    crroppper = crroppper.perform_cropping()
+    handler = csv_preprocess_brats()
+    handler.csv_divider_train_valid_test(ratio=0.1, num_clients=6)
+    # crroppper = cropper()
+    # crroppper = crroppper.perform_cropping()
