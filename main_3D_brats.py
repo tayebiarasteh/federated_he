@@ -14,6 +14,7 @@ from torch.nn import CrossEntropyLoss
 import numpy as np
 from tqdm import tqdm
 import nibabel as nib
+from math import floor
 
 from config.serde import open_experiment, create_experiment, delete_experiment, write_config
 from Train_Valid_brats import Training
@@ -91,7 +92,7 @@ def main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositori
 
 
 def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml", valid=False,
-                  resume=False, augment=False, experiment_name='name', modality=2, HE=False):
+                  resume=False, augment=False, experiment_name='name', modality=2, HE=False, num_clients=3):
     """Main function for training + validation for directly 3d-wise
 
         Parameters
@@ -118,6 +119,12 @@ def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Reposito
             2: T1Gd
             3: T2
             4: T2-FLAIR
+
+        HE: bool
+            if we want to have homomorphic encryption
+
+        num_clients: int
+            number of training federated clients we want
     """
     if resume == True:
         params = open_experiment(experiment_name, global_config_path)
@@ -132,24 +139,19 @@ def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Reposito
     optimizer = torch.optim.Adam(model.parameters(), lr=float(params['Network']['lr']),
                                  weight_decay=float(params['Network']['weight_decay']), amsgrad=params['Network']['amsgrad'])
 
-    train_dataset_client1 = data_loader_3D(cfg_path=cfg_path, mode='train', site='site-1')
-    train_loader_client1 = torch.utils.data.DataLoader(dataset=train_dataset_client1, batch_size=params['Network']['batch_size'],
-                                               pin_memory=True, drop_last=True, shuffle=False, num_workers=4)
-    train_dataset_client2 = data_loader_3D(cfg_path=cfg_path, mode='train', site='site-2')
-    train_loader_client2 = torch.utils.data.DataLoader(dataset=train_dataset_client2, batch_size=params['Network']['batch_size'],
-                                               pin_memory=True, drop_last=True, shuffle=False, num_workers=4)
-    train_dataset_client3 = data_loader_3D(cfg_path=cfg_path, mode='train', site='site-3')
-    train_loader_client3 = torch.utils.data.DataLoader(dataset=train_dataset_client3, batch_size=params['Network']['batch_size'],
-                                               pin_memory=True, drop_last=True, shuffle=False, num_workers=4)
-
+    num_workers = floor(16 / (num_clients + 1))
+    train_loader = []
+    for num in range(num_clients):
+        train_dataset_client = data_loader_3D(cfg_path=cfg_path, mode='train', site='site-' + str(num + 1))
+        train_loader.append(torch.utils.data.DataLoader(dataset=train_dataset_client, batch_size=params['Network']['batch_size'],
+                                                           pin_memory=True, drop_last=True, shuffle=False, num_workers=num_workers))
     if valid:
         valid_dataset = data_loader_3D(cfg_path=cfg_path, mode='valid')
         valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset, batch_size=params['Network']['batch_size'],
-                                                   pin_memory=True, drop_last=True, shuffle=False, num_workers=4)
+                                                   pin_memory=True, drop_last=True, shuffle=False, num_workers=num_workers)
     else:
         valid_loader = None
 
-    train_loader = [train_loader_client1, train_loader_client2, train_loader_client3]
     trainer = Training(cfg_path, num_epochs=params['num_epochs'], resume=resume, augment=augment)
     if resume == True:
         trainer.load_checkpoint(model=model, optimiser=optimizer, loss_function=loss_function, weight=None)
@@ -282,10 +284,10 @@ def main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/fed
 
 if __name__ == '__main__':
     delete_experiment(experiment_name='tempppnohe', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
-    main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-                  valid=True, resume=False, augment=False, experiment_name='tempppnohe')
-    # main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #               valid=True, resume=False, augment=False, experiment_name='tempppnohe', HE=True)
+    # main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+    #               valid=True, resume=False, augment=False, experiment_name='tempppnohe')
+    main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+                  valid=True, resume=False, augment=False, experiment_name='tempppnohe', HE=True, num_clients=3)
     # main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
     #             experiment_name='federated_full_3client_no_augment_lr1e4_80_80_80', tta=False)
     # main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",

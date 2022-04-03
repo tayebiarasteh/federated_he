@@ -266,16 +266,38 @@ class Training:
         """
         self.params = read_config(self.cfg_path)
 
-        # create a couple workers
-        client1 = sy.VirtualWorker(hook, id="client1")
-        client2 = sy.VirtualWorker(hook, id="client2")
-        client3 = sy.VirtualWorker(hook, id="client3")
+        client_list = []
+
+        for idx in range(len(train_loader)):
+            # create a couple workers
+            client_list.append(sy.VirtualWorker(hook, id="client" + str(idx)))
         secure_worker = sy.VirtualWorker(hook, id="secure_worker")
 
-        client1.add_workers([client2, client3, secure_worker])
-        client2.add_workers([client1, client3, secure_worker])
-        client3.add_workers([client1, client2, secure_worker])
-        secure_worker.add_workers([client1, client2, client3])
+        if len(train_loader) == 2:
+            client_list[0].add_workers([client_list[1], secure_worker])
+            client_list[1].add_workers([client_list[0], secure_worker])
+            secure_worker.add_workers([client_list[0], client_list[1]])
+
+        elif len(train_loader) == 3:
+            client_list[0].add_workers([client_list[1], client_list[2], secure_worker])
+            client_list[1].add_workers([client_list[0], client_list[2], secure_worker])
+            client_list[2].add_workers([client_list[0], client_list[1], secure_worker])
+            secure_worker.add_workers([client_list[0], client_list[1], client_list[2]])
+
+        elif len(train_loader) == 4:
+            client_list[0].add_workers([client_list[1], client_list[2], client_list[3], secure_worker])
+            client_list[1].add_workers([client_list[0], client_list[2], client_list[3], secure_worker])
+            client_list[2].add_workers([client_list[0], client_list[1], client_list[3], secure_worker])
+            client_list[3].add_workers([client_list[0], client_list[1], client_list[2], secure_worker])
+            secure_worker.add_workers([client_list[0], client_list[1], client_list[2], client_list[3]])
+
+        elif len(train_loader) == 5:
+            client_list[0].add_workers([client_list[1], client_list[2], client_list[3], client_list[4], secure_worker])
+            client_list[1].add_workers([client_list[0], client_list[2], client_list[3], client_list[4], secure_worker])
+            client_list[2].add_workers([client_list[0], client_list[1], client_list[3], client_list[4], secure_worker])
+            client_list[3].add_workers([client_list[0], client_list[1], client_list[2], client_list[4], secure_worker])
+            client_list[4].add_workers([client_list[0], client_list[1], client_list[2], client_list[3], secure_worker])
+            secure_worker.add_workers([client_list[0], client_list[1], client_list[2], client_list[3], client_list[4]])
 
         state_dict_list = []
         for name in self.model.state_dict():
@@ -288,66 +310,95 @@ class Training:
             start_time = time.time()
             self.model.train()
 
-            client1.clear_objects()
-            client2.clear_objects()
-            client3.clear_objects()
             secure_worker.clear_objects()
-
-            model_client1 = self.model.copy().send(client1)
-            model_client2 = self.model.copy().send(client2)
-            model_client3 = self.model.copy().send(client3)
-
-            optimizer_client1 = torch.optim.Adam(model_client1.parameters(), lr=float(self.params['Network']['lr']),
-                                         weight_decay=float(self.params['Network']['weight_decay']),
-                                                 amsgrad=self.params['Network']['amsgrad'])
-            optimizer_client2 = torch.optim.Adam(model_client2.parameters(), lr=float(self.params['Network']['lr']),
-                                         weight_decay=float(self.params['Network']['weight_decay']),
-                                                 amsgrad=self.params['Network']['amsgrad'])
-            optimizer_client3 = torch.optim.Adam(model_client3.parameters(), lr=float(self.params['Network']['lr']),
-                                         weight_decay=float(self.params['Network']['weight_decay']),
-                                                 amsgrad=self.params['Network']['amsgrad'])
-
-            model_client1, loss_client1 = self.train_epoch_federated(train_loader[0], optimizer_client1, model_client1)
-            model_client2, loss_client2 = self.train_epoch_federated(train_loader[1], optimizer_client2, model_client2)
-            model_client3, loss_client3 = self.train_epoch_federated(train_loader[2], optimizer_client3, model_client3)
+            model_client_list = []
+            optimizer_client_list = []
+            new_model_client_list = []
+            loss_client_list = []
+            for idx in range(len(train_loader)):
+                client_list[idx].clear_objects()
+                model_client_list.append(self.model.copy().send(client_list[idx]))
+                optimizer_client_list.append(torch.optim.Adam(model_client_list[idx].parameters(), lr=float(self.params['Network']['lr']),
+                                                     weight_decay=float(self.params['Network']['weight_decay']),
+                                                     amsgrad=self.params['Network']['amsgrad']))
+                new_model_client, loss_client = self.train_epoch_federated(train_loader[idx], optimizer_client_list[idx], model_client_list[idx])
+                new_model_client_list.append(new_model_client)
+                loss_client_list.append(loss_client)
 
             temp_dict = {}
             if HE:
                 for weightbias in state_dict_list:
                     temp_one_param_list = []
-                    temp_one_param_list.append(model_client1.state_dict()[weightbias].fix_precision().share(
-                        client1, client2, client3, crypto_provider=secure_worker).get())
-                    temp_one_param_list.append(model_client2.state_dict()[weightbias].fix_precision().share(
-                        client1, client2, client3, crypto_provider=secure_worker).get())
-                    temp_one_param_list.append(model_client3.state_dict()[weightbias].fix_precision().share(
-                        client1, client2, client3, crypto_provider=secure_worker).get())
-                    temp_dict[weightbias] = (temp_one_param_list[0] + temp_one_param_list[1] +
-                                             temp_one_param_list[2]).get().float_precision() / 3
+
+                    if len(train_loader) == 2:
+                        temp_one_param_list.append(new_model_client_list[0].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], crypto_provider=secure_worker).get())
+                        temp_one_param_list.append(new_model_client_list[1].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], crypto_provider=secure_worker).get())
+                        temp_dict[weightbias] = (temp_one_param_list[0] + temp_one_param_list[1]).get().float_precision() / 2
+
+                    elif len(train_loader) == 3:
+                        temp_one_param_list.append(new_model_client_list[0].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], crypto_provider=secure_worker).get())
+                        temp_one_param_list.append(new_model_client_list[1].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], crypto_provider=secure_worker).get())
+                        temp_one_param_list.append(new_model_client_list[2].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], crypto_provider=secure_worker).get())
+                        temp_dict[weightbias] = (temp_one_param_list[0] + temp_one_param_list[1] +
+                                                 temp_one_param_list[2]).get().float_precision() / 3
+
+                    elif len(train_loader) == 4:
+                        temp_one_param_list.append(new_model_client_list[0].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], client_list[3], crypto_provider=secure_worker).get())
+                        temp_one_param_list.append(new_model_client_list[1].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], client_list[3], crypto_provider=secure_worker).get())
+                        temp_one_param_list.append(new_model_client_list[2].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], client_list[3], crypto_provider=secure_worker).get())
+                        temp_one_param_list.append(new_model_client_list[3].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], client_list[3], crypto_provider=secure_worker).get())
+                        temp_dict[weightbias] = (temp_one_param_list[0] + temp_one_param_list[1] +
+                                                 temp_one_param_list[2] + temp_one_param_list[3]).get().float_precision() / 4
+
+                    elif len(train_loader) == 5:
+                        temp_one_param_list.append(new_model_client_list[0].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], crypto_provider=secure_worker).get())
+                        temp_one_param_list.append(new_model_client_list[1].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], crypto_provider=secure_worker).get())
+                        temp_one_param_list.append(new_model_client_list[2].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], crypto_provider=secure_worker).get())
+                        temp_one_param_list.append(new_model_client_list[3].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], crypto_provider=secure_worker).get())
+                        temp_one_param_list.append(new_model_client_list[4].state_dict()[weightbias].fix_precision().share(
+                            client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], crypto_provider=secure_worker).get())
+                        temp_dict[weightbias] = (temp_one_param_list[0] + temp_one_param_list[1] + temp_one_param_list[2] +
+                                                 temp_one_param_list[3] + temp_one_param_list[4]).get().float_precision() / 5
+
             else:
-                model_client1.move(secure_worker)
-                model_client2.move(secure_worker)
-                model_client3.move(secure_worker)
+                for idx in range(len(train_loader)):
+                    new_model_client_list[idx].move(secure_worker)
+
                 for weightbias in state_dict_list:
-                    temp_dict[weightbias] = ((model_client1.state_dict()[weightbias] + model_client2.state_dict()[weightbias] +
-                                              model_client3.state_dict()[weightbias]) / 3).clone().get()
+                    temp_weight_list = []
+                    for idx in range(len(train_loader)):
+                        temp_weight_list.append(new_model_client_list[idx].state_dict()[weightbias])
+                    temp_dict[weightbias] = (sum(temp_weight_list) / len(temp_weight_list)).clone().get()
 
             self.model.load_state_dict(temp_dict)
 
             # train loss just as an average of client losses
-            train_loss = (loss_client1 + loss_client2 + loss_client3) / 3
+            train_loss = sum(loss_client_list) / len(loss_client_list)
 
             # Prints train loss after number of steps specified.
             end_time = time.time()
             iteration_hours, iteration_mins, iteration_secs = self.time_duration(start_time, end_time)
             total_hours, total_mins, total_secs = self.time_duration(total_start_time, end_time)
 
-            print('train epoch {} | loss client1: {:.3f} | loss client2: {:.3f} | loss client3: {:.3f}'.
-                  format(self.epoch, loss_client1, loss_client2, loss_client3),
-                  f'\ntime: {iteration_hours}h {iteration_mins}m {iteration_secs}s',
-                  f'| total: {total_hours}h {total_mins}m {total_secs}s\n')
-            self.writer.add_scalar('Train_loss_client1', loss_client1, self.epoch)
-            self.writer.add_scalar('Train_loss_client2', loss_client2, self.epoch)
-            self.writer.add_scalar('Train_loss_client3', loss_client3, self.epoch)
+            print(f'train epoch {self.epoch} | time: {iteration_hours}h {iteration_mins}m {iteration_secs}s',
+                  f'| total: {total_hours}h {total_mins}m {total_secs}s')
+
+            for idx in range(len(train_loader)):
+                print('loss client{}: {:.3f}'.format((idx + 1), loss_client_list[idx]))
+                self.writer.add_scalar('Train_loss_client' + str(idx + 1), loss_client_list[idx], self.epoch)
             self.writer.add_scalar('Train_loss_avg', train_loss, self.epoch)
 
             # Validation iteration & calculate metrics
