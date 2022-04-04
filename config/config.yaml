@@ -7,10 +7,11 @@ Network:
   resize_shape: [80,80,80] # d, h, w (training data are also stored in d, h, w). after cropping. multi mode 4-level. 3.4 GB for 24
 #  resize_shape: [120,120,160] # d, h, w (training data are also stored in d, h, w). keep it dividable by 4; in syft padding is not possible
 augmentation:
+  patch_size: [128, 128, 128] # if we don't use image down sampling, patches of this size will be cropped from original image
   general_spatial_probability: 0.5 # probability of having spatial data augmentation at all
   general_intensity_probability: 0.5 # probability of having intensity data augmentation at all
-  lateral_flip_prob: 0.2 # probability of having lateral flipping augmentation
-  interior_flip_prob: 0.2 # probability of having interior flipping augmentation
+  lateral_flip_prob: 0.5 # probability of having lateral flipping augmentation
+  interior_flip_prob: 0.5 # probability of having interior flipping augmentation
   zoom_range: [1, 1.15] # 0.1 means from 0.9 to 1.1
   zoom_prob: -1 # probability of having zooming augmentation [for the moment only zoom-in: more than 1] [bug in the source code of tio]
   rotation_range: 5 # degrees. 1 = (-1, 1)
@@ -21,7 +22,7 @@ augmentation:
   eladf_max_displacement: 8
   elastic_prob: -1 # probability of having elastic deformation augmentation [DON'T USE FOR BRATS]
   gamma_range: [0, 0.2] # this number changes beta exponent distribution; don't go more than 0.2
-  gamma_prob: 0.2 # probability of having gamma augmentation
+  gamma_prob: 0.4 # probability of having gamma augmentation
   mu_AWGN: 0.0 # mean of AWGN
   sigma_AWGN: 0.03 # std of AWGN; don't go more than 0.03
   AWGN_prob: 0.2 # probability of having AWGN augmentation
@@ -42,4 +43,4 @@ file_path: /home/soroosh/Documents/datasets/BraTS20/old_BraTS20/cropped/
 target_dir: /home/soroosh/Documents/Repositories_target_files/federated_he/
 network_save_freq: 10 # based on the batch size, shows the number of epochs done; every half an hour is good
 display_stats_freq: 1 # valid freq is equal to this
-num_epochs: 1000
+num_epochs: 300

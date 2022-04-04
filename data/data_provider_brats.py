@@ -27,7 +27,7 @@ class data_loader_3D(Dataset):
     """
     This is the pipeline based on Pytorch's Dataset and Dataloader
     """
-    def __init__(self, cfg_path, mode='train', modality=2, multimodal=True, site=None, image_resize=True):
+    def __init__(self, cfg_path, mode='train', modality=2, multimodal=True, site=None, image_downsample=True):
         """
         Parameters
         ----------
@@ -49,7 +49,7 @@ class data_loader_3D(Dataset):
         site: str
             name of the client for federated learning
 
-        image_resize: bool
+        image_downsample: bool
             if we want to have image down sampling
         """
 
@@ -58,7 +58,7 @@ class data_loader_3D(Dataset):
         self.file_base_dir = self.params['file_path']
         self.modality = int(modality)
         self.multimodal = multimodal
-        self.image_resize = image_resize
+        self.image_downsample = image_downsample
         org_df = pd.read_csv(os.path.join(self.file_base_dir, "brats20_master_list.csv"), sep=',')
 
         if mode=='train':
@@ -128,34 +128,16 @@ class data_loader_3D(Dataset):
             normalized_img4 = normalized_img4.transpose(2, 0, 1)  # (d, h, w)
 
             # image resizing for memory issues
-            if self.image_resize:
+            if self.image_downsample:
                 normalized_img_resized1, label1 = self.resize_manual(normalized_img1, label1)
                 normalized_img_resized2, label2 = self.resize_manual(normalized_img2, label2)
                 normalized_img_resized3, label3 = self.resize_manual(normalized_img3, label3)
                 normalized_img_resized4, _ = self.resize_manual(normalized_img4, label3)
+                normalized_img_resized = np.stack((normalized_img_resized1, normalized_img_resized2,
+                                                   normalized_img_resized3, normalized_img_resized4))  # (c=4, d, h, w)
             else:
-                if normalized_img1.shape[0] % 8 > 0:
-                    remainder_d = normalized_img1.shape[0] % 8
-                else:
-                    remainder_d = 8
-                if normalized_img1.shape[1] % 8 > 0:
-                    remainder_h = normalized_img1.shape[1] % 8
-                else:
-                    remainder_h = 8
-                if normalized_img1.shape[2] % 8 > 0:
-                    remainder_w = normalized_img1.shape[2] % 8
-                else:
-                    remainder_w = 8
-                normalized_img_resized1 = np.pad(normalized_img1, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
-                normalized_img_resized2 = np.pad(normalized_img2, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
-                normalized_img_resized3 = np.pad(normalized_img3, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
-                normalized_img_resized4 = np.pad(normalized_img4, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
-                label1 = np.pad(label1, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
-                label2 = np.pad(label2, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
-                label3 = np.pad(label3, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
-
-            normalized_img_resized = np.stack((normalized_img_resized1, normalized_img_resized2,
-                                               normalized_img_resized3, normalized_img_resized4))  # (c=4, d, h, w)
+                normalized_img_resized = np.stack((normalized_img1, normalized_img2,
+                                                   normalized_img3, normalized_img4))  # (c=4, d, h, w)
             normalized_img_resized = torch.from_numpy(normalized_img_resized)  # (c=4, d, h, w)
 
         else:
@@ -164,30 +146,14 @@ class data_loader_3D(Dataset):
             normalized_img = normalized_img.transpose(2, 0, 1)  # (d, h, w)
 
             # image resizing for memory issues
-            if self.image_resize:
+            if self.image_downsample:
                 normalized_img_resized, label1 = self.resize_manual(normalized_img, label1)
                 _, label2 = self.resize_manual(normalized_img, label2)
                 _, label3 = self.resize_manual(normalized_img, label3)
             else:
-                if normalized_img.shape[0] % 8 > 0:
-                    remainder_d = normalized_img.shape[0] % 8
-                else:
-                    remainder_d = 8
-                if normalized_img.shape[1] % 8 > 0:
-                    remainder_h = normalized_img.shape[1] % 8
-                else:
-                    remainder_h = 8
-                if normalized_img.shape[2] % 8 > 0:
-                    remainder_w = normalized_img.shape[2] % 8
-                else:
-                    remainder_w = 8
-                normalized_img_resized = np.pad(normalized_img, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
-                label1 = np.pad(label1, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
-                label2 = np.pad(label2, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
-                label3 = np.pad(label3, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
-
-                normalized_img_resized = torch.from_numpy(normalized_img_resized)  # (d, h, w)
-                normalized_img_resized = torch.unsqueeze(normalized_img_resized, 0)  # (c=1, d, h, w)
+                normalized_img_resized = normalized_img
+            normalized_img_resized = torch.from_numpy(normalized_img_resized)  # (d, h, w)
+            normalized_img_resized = torch.unsqueeze(normalized_img_resized, 0)  # (c=1, d, h, w)
 
         label1 = torch.from_numpy(label1)  # (d, h, w)
         label2 = torch.from_numpy(label2)  # (d, h, w)
@@ -278,7 +244,7 @@ class data_loader_without_label_3D():
     """
     This is the dataloader based on our own implementation.
     """
-    def __init__(self, cfg_path, mode='test', modality=2, multimodal=True, image_resize=True):
+    def __init__(self, cfg_path, mode='test', modality=2, multimodal=True, image_downsample=True):
         """
         Parameters
         ----------
@@ -302,7 +268,7 @@ class data_loader_without_label_3D():
         self.file_base_dir = self.params['file_path']
         self.modality = int(modality)
         self.multimodal = multimodal
-        self.image_resize = image_resize
+        self.image_downsample = image_downsample
         org_df = pd.read_csv(os.path.join(self.file_base_dir, "brats20_master_list.csv"), sep=',')
 
         if mode=='train':
@@ -351,34 +317,19 @@ class data_loader_without_label_3D():
             normalized_img4 = normalized_img4.transpose(2, 0, 1)  # (d, h, w)
 
             # image resizing for memory issues
-            if self.image_resize:
+            if self.image_downsample:
                 normalized_img_resized1, _ = self.resize_manual(normalized_img1, normalized_img1)
                 normalized_img_resized2, _ = self.resize_manual(normalized_img2, normalized_img2)
                 normalized_img_resized3, _ = self.resize_manual(normalized_img3, normalized_img3)
                 normalized_img_resized4, _ = self.resize_manual(normalized_img4, normalized_img4)
                 img_resized, _ = self.resize_manual(img, img)
-
+                normalized_img_resized = np.stack((normalized_img_resized1, normalized_img_resized2,
+                                                   normalized_img_resized3, normalized_img_resized4))  # (c=4, d, h, w)
             else:
-                if normalized_img1.shape[0] % 8 > 0:
-                    remainder_d = normalized_img1.shape[0] % 8
-                else:
-                    remainder_d = 8
-                if normalized_img1.shape[1] % 8 > 0:
-                    remainder_h = normalized_img1.shape[1] % 8
-                else:
-                    remainder_h = 8
-                if normalized_img1.shape[2] % 8 > 0:
-                    remainder_w = normalized_img1.shape[2] % 8
-                else:
-                    remainder_w = 8
-                normalized_img_resized1 = np.pad(normalized_img1, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
-                normalized_img_resized2 = np.pad(normalized_img2, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
-                normalized_img_resized3 = np.pad(normalized_img3, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
-                normalized_img_resized4 = np.pad(normalized_img4, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
-                img = np.pad(img, [(0, 8 - remainder_d), (0, 8 - remainder_h), (0, 8 - remainder_w)], mode='constant')
+                normalized_img_resized = np.stack((normalized_img1, normalized_img2,
+                                                   normalized_img3, normalized_img4))  # (c=4, d, h, w)
+                img_resized = img
 
-            normalized_img_resized = np.stack((normalized_img_resized1, normalized_img_resized2,
-                                               normalized_img_resized3, normalized_img_resized4))  # (c=4, d, h, w)
             normalized_img_resized = torch.from_numpy(normalized_img_resized)  # (c=4, d, h, w)
 
         else:
@@ -387,7 +338,7 @@ class data_loader_without_label_3D():
             normalized_img = normalized_img.transpose(2, 0, 1)  # (d, h, w)
 
             # image resizing for memory issues
-            if normalized_img.size > 2433600:  # 100*156*156 = 2433600
+            if self.image_downsample:
                 normalized_img_resized, _ = self.resize_manual(normalized_img, normalized_img)
                 img_resized, _ = self.resize_manual(img, img)
 

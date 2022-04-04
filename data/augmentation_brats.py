@@ -14,6 +14,7 @@ import torchio as tio
 from random import random
 import nibabel as nib
 import numpy as np
+import torch.nn.functional as F
 
 from config.serde import read_config
 
@@ -132,7 +133,7 @@ def random_intensity_brats_augmentation(image, confg_path='/home/soroosh/Documen
 
 
 
-def random_augment(image, label, confg_path='/home/soroosh/Documents/Repositories/federated_he/config/config.yaml'):
+def random_augment(image, label, image_downsample, confg_path='/home/soroosh/Documents/Repositories/federated_he/config/config.yaml'):
     """
     Parameters
     ----------
@@ -150,6 +151,35 @@ def random_augment(image, label, confg_path='/home/soroosh/Documents/Repositorie
     transformed_label_list = []
 
     for image_file, label_file in zip(image, label):
+
+        if not image_downsample:
+            # cropping (patching)
+            patch_d, patch_h, patch_w = params['augmentation']['patch_size']
+            batch_size, channels, slices, rows, columns = image.shape
+
+            if columns < patch_w:
+                diff = patch_w - columns
+                columns = patch_w
+                image_file = F.pad(image_file, (0, diff), "constant", 0)
+                label_file = F.pad(label_file, (0, diff), "constant", 0)
+            if rows < patch_h:
+                diff2 = patch_h - rows
+                rows = patch_h
+                image_file = F.pad(image_file, (0, 0, 0, diff2), "constant", 0)
+                label_file = F.pad(label_file, (0, 0, 0, diff2), "constant", 0)
+            if slices < patch_d:
+                flag = True
+                diff3 = patch_d - slices
+                slices = patch_d
+                image_file = F.pad(image_file, (0, 0, 0, 0, 0, diff3), "constant", 0)
+                label_file = F.pad(label_file, (0, 0, 0, 0, 0, diff3), "constant", 0)
+
+            dd = np.random.randint(slices - patch_d + 1)
+            hh = np.random.randint(rows - patch_h + 1)
+            ww = np.random.randint(columns - patch_w + 1)
+            image_file = image_file[:, dd:dd + patch_d, hh:hh + patch_h, ww:ww + patch_w]
+            label_file = label_file[:, dd:dd + patch_d, hh:hh + patch_h, ww:ww + patch_w]
+
 
         if random() < params['augmentation']['general_spatial_probability']:
             transformed_image, transformed_label = random_spatial_brats_augmentation(image_file, label_file, confg_path)

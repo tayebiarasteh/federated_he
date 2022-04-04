@@ -187,7 +187,7 @@ class Training:
 
 
 
-    def train_epoch(self, train_loader, valid_loader=None):
+    def train_epoch(self, train_loader, valid_loader=None, image_downsample=True):
         """Training epoch
         """
         self.params = read_config(self.cfg_path)
@@ -205,7 +205,7 @@ class Training:
 
                 # if we would like to have data augmentation during training
                 if self.augment:
-                    image, label = random_augment(image, label, self.cfg_path)
+                    image, label = random_augment(image, label, image_downsample, self.cfg_path)
 
                 image = image.to(self.device)
                 label = label.to(self.device)
@@ -253,7 +253,7 @@ class Training:
 
 
 
-    def training_setup_federated(self, train_loader, valid_loader=None, HE=False, precision_fractional=15):
+    def training_setup_federated(self, train_loader, valid_loader=None, HE=False, precision_fractional=15, image_downsample=True):
         """
 
         Parameters
@@ -334,14 +334,14 @@ class Training:
                 optimizer_client_list.append(torch.optim.Adam(model_client_list[idx].parameters(), lr=float(self.params['Network']['lr']),
                                                      weight_decay=float(self.params['Network']['weight_decay']),
                                                      amsgrad=self.params['Network']['amsgrad']))
-                new_model_client, loss_client = self.train_epoch_federated(train_loader[idx], optimizer_client_list[idx], model_client_list[idx])
+                new_model_client, loss_client = self.train_epoch_federated(train_loader[idx], optimizer_client_list[idx], model_client_list[idx], image_downsample)
                 new_model_client_list.append(new_model_client)
                 loss_client_list.append(loss_client)
 
-            ######## temp ############
-            for idx in range(len(train_loader)):
-                new_model_client_list[idx].move(secure_worker)
-            ######## temp ############
+            # ######## temp ############
+            # for idx in range(len(train_loader)):
+            #     new_model_client_list[idx].move(secure_worker)
+            # ######## temp ############
 
             temp_dict = {}
             if HE:
@@ -362,20 +362,20 @@ class Training:
                         else:
                             temp_dict[weightbias] = (temp_one_param_list[0] + temp_one_param_list[1]).get().float_precision() / 2
 
-                        ######## temp ############
-                        diff_temp = temp_dict[weightbias].sum().item()
-                        print("\nHE averaging:", diff_temp)
-
-                        temp_weight_list_copy = []
-                        temp_dict_copy = {}
-
-                        temp_weight_list_copy.append(new_model_client_list[0].state_dict()[weightbias])
-                        temp_weight_list_copy.append(new_model_client_list[1].state_dict()[weightbias])
-                        temp_dict_copy[weightbias] = (sum(temp_weight_list_copy) / len(temp_weight_list_copy)).clone().get()
-                        print("normal averaging:", temp_dict_copy[weightbias].sum().item())
-                        print("difference:", temp_dict_copy[weightbias].sum().item() - diff_temp)
-                        print("name:", weightbias)
-                        ######## temp ############
+                        # ######## temp ############
+                        # diff_temp = temp_dict[weightbias].sum().item()
+                        # print("\nHE averaging:", diff_temp)
+                        #
+                        # temp_weight_list_copy = []
+                        # temp_dict_copy = {}
+                        #
+                        # temp_weight_list_copy.append(new_model_client_list[0].state_dict()[weightbias])
+                        # temp_weight_list_copy.append(new_model_client_list[1].state_dict()[weightbias])
+                        # temp_dict_copy[weightbias] = (sum(temp_weight_list_copy) / len(temp_weight_list_copy)).clone().get()
+                        # print("normal averaging:", temp_dict_copy[weightbias].sum().item())
+                        # print("difference:", temp_dict_copy[weightbias].sum().item() - diff_temp)
+                        # print("name:", weightbias)
+                        # ######## temp ############
 
                     elif len(train_loader) == 3:
                         if 'num_batches_tracked' in weightbias:
@@ -437,22 +437,22 @@ class Training:
                             temp_dict[weightbias] = (temp_one_param_list[0] + temp_one_param_list[1] + temp_one_param_list[2] +
                                                      temp_one_param_list[3] + temp_one_param_list[4]).get().float_precision() / 5
 
-                        ######## temp ############
-                        diff_temp = temp_dict[weightbias].sum().item()
-                        print("\nHE averaging:", diff_temp)
-
-                        temp_weight_list_copy = []
-                        temp_dict_copy = {}
-
-                        temp_weight_list_copy.append(new_model_client_list[0].state_dict()[weightbias])
-                        temp_weight_list_copy.append(new_model_client_list[1].state_dict()[weightbias])
-                        temp_weight_list_copy.append(new_model_client_list[2].state_dict()[weightbias])
-                        temp_weight_list_copy.append(new_model_client_list[3].state_dict()[weightbias])
-                        temp_weight_list_copy.append(new_model_client_list[4].state_dict()[weightbias])
-                        temp_dict_copy[weightbias] = (sum(temp_weight_list_copy) / len(temp_weight_list_copy)).clone().get()
-                        print("normal averaging:", temp_dict_copy[weightbias].sum().item())
-                        print("difference:", temp_dict_copy[weightbias].sum().item() - diff_temp)
-                        ######## temp ############
+                        # ######## temp ############
+                        # diff_temp = temp_dict[weightbias].sum().item()
+                        # print("\nHE averaging:", diff_temp)
+                        #
+                        # temp_weight_list_copy = []
+                        # temp_dict_copy = {}
+                        #
+                        # temp_weight_list_copy.append(new_model_client_list[0].state_dict()[weightbias])
+                        # temp_weight_list_copy.append(new_model_client_list[1].state_dict()[weightbias])
+                        # temp_weight_list_copy.append(new_model_client_list[2].state_dict()[weightbias])
+                        # temp_weight_list_copy.append(new_model_client_list[3].state_dict()[weightbias])
+                        # temp_weight_list_copy.append(new_model_client_list[4].state_dict()[weightbias])
+                        # temp_dict_copy[weightbias] = (sum(temp_weight_list_copy) / len(temp_weight_list_copy)).clone().get()
+                        # print("normal averaging:", temp_dict_copy[weightbias].sum().item())
+                        # print("difference:", temp_dict_copy[weightbias].sum().item() - diff_temp)
+                        # ######## temp ############
 
                     elif len(train_loader) == 6:
                         if 'num_batches_tracked' in weightbias:
@@ -487,9 +487,6 @@ class Training:
                     for idx in range(len(train_loader)):
                         temp_weight_list.append(new_model_client_list[idx].state_dict()[weightbias])
                     temp_dict[weightbias] = (sum(temp_weight_list) / len(temp_weight_list)).clone().get()
-
-
-            # pdb.set_trace()
 
             self.model.load_state_dict(temp_dict)
 
@@ -536,7 +533,7 @@ class Training:
 
 
 
-    def train_epoch_federated(self, train_loader, optimizer, model):
+    def train_epoch_federated(self, train_loader, optimizer, model, image_downsample):
         """Training epoch
         """
 
@@ -548,8 +545,7 @@ class Training:
 
             # if we would like to have data augmentation during training
             if self.augment:
-                image, label = random_augment(image, label, self.cfg_path)
-
+                image, label = random_augment(image, label, image_downsample, self.cfg_path)
 
             loc = model.location
             image = image.send(loc)
