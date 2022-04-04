@@ -14,7 +14,7 @@ import torch.nn.functional as F
 
 
 class UNet3D(nn.Module):
-    def __init__(self, n_in_channels=4, n_out_classes=3, threelevel=False, firstdim=24, weight_init=True):
+    def __init__(self, n_in_channels=4, n_out_classes=3, threelevel=False, firstdim=48, weight_init=True):
         """
         Parameters
         ----------

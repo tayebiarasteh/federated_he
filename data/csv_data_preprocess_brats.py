@@ -109,7 +109,7 @@ class csv_preprocess_brats():
             nib.save(input_img, os.path.join(target_base, 'T2-FLAIR', 'pat' + str(patient).zfill(3), 'pat' + str(patient).zfill(3) + '-seg-label3.nii.gz'))
 
 
-    def csv_divider_train_valid_test(self, ratio=0.1, num_clients=3):
+    def csv_divider_train_valid_test(self, num_clients=3):
         """
 
         Parameters
@@ -150,11 +150,11 @@ class csv_preprocess_brats():
 
         subject_list = df['BraTS_2020_subject_ID'].unique().tolist()
         random.shuffle(subject_list)
-        val_num = ceil(len(subject_list) / (1 / ratio))
+        # val_num = ceil(len(subject_list) / (1 / ratio))
 
-        test_subjects = subject_list[:val_num]
-        valid_subjects = subject_list[val_num:2 * val_num]
-        train_subjects = subject_list[2 * val_num:]
+        test_subjects = subject_list[:35]
+        valid_subjects = subject_list[35:69]
+        train_subjects = subject_list[69:]
 
         # adding files to train
         for subject in train_subjects:
@@ -429,6 +429,6 @@ class cropper():
 
 if __name__ == '__main__':
     handler = csv_preprocess_brats()
-    handler.csv_divider_train_valid_test(ratio=0.1, num_clients=6)
+    handler.csv_divider_train_valid_test(num_clients=2)
     # crroppper = cropper()
     # crroppper = crroppper.perform_cropping()

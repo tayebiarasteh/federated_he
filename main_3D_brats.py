@@ -92,7 +92,7 @@ def main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositori
 
 
 def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml", valid=False,
-                  resume=False, augment=False, experiment_name='name', modality=2, HE=False, num_clients=3, image_resize=True):
+                  resume=False, augment=False, experiment_name='name', modality=2, HE=False, num_clients=3, image_resize=True, precision_fractional=15):
     """Main function for training + validation for directly 3d-wise
 
         Parameters
@@ -158,7 +158,7 @@ def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Reposito
     else:
         trainer.setup_model(model=model, optimiser=optimizer,
                         loss_function=loss_function, weight=None)
-    trainer.training_setup_federated(train_loader, valid_loader=valid_loader, HE=HE)
+    trainer.training_setup_federated(train_loader, valid_loader=valid_loader, HE=HE, precision_fractional=precision_fractional)
 
 
 
@@ -283,12 +283,12 @@ def main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/fed
 
 
 if __name__ == '__main__':
-    # delete_experiment(experiment_name='tempppnohe', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
+    delete_experiment(experiment_name='tempppnohe', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
     # main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #               valid=True, resume=False, augment=True, experiment_name='tempppnohe', image_resize=True)
-    # main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #               valid=True, resume=False, augment=False, experiment_name='tempppnohe', HE=True, num_clients=3, image_resize=True)
-    main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-                experiment_name='central_no_augment_lr1e4_80_80_80', tta=True, image_resize=True)
+    #               valid=True, resume=False, augment=False, experiment_name='tempppnohe', image_resize=True)
+    main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+                  valid=True, resume=False, augment=True, experiment_name='tempppnohe', HE=True, num_clients=2, image_resize=True, precision_fractional=15)
+    # main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+    #             experiment_name='central_no_augment_lr1e4_80_80_80', tta=True, image_resize=True)
     # main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
     #             experiment_name='4levelunet24_flip_gamma_AWGN_blur_zoomin_central_full_lr1e4_80_80_80', tta=False, image_resize=True)

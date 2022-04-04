@@ -194,6 +194,10 @@ class data_loader_3D(Dataset):
         label3 = torch.from_numpy(label3)  # (d, h, w)
         label = torch.stack((label1, label2, label3)) # (c=3, d, h, w)
 
+        # normalized_img_resized = normalized_img_resized.half() # float16
+        normalized_img_resized = normalized_img_resized.float() # float32
+        label = label.int() # int32
+
         return normalized_img_resized, label
 
 

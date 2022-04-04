@@ -8,6 +8,8 @@ https://github.com/tayebiarasteh/
 
 
 import pdb
+
+import torch
 import torchio as tio
 from random import random
 import nibabel as nib
@@ -137,20 +139,41 @@ def random_augment(image, label, confg_path='/home/soroosh/Documents/Repositorie
     image: torch tensor (n, c, d, h, w)
     label: torch tensor (n, c, d, h, w)
     confg_path: str
+
     Returns
     -------
-    transformed_image: torch tensor (n, c, d, h, w)
-    transformed_label: torch tensor (n, c, d, h, w)
+    transformed_image_list: torch tensor (n, c, d, h, w)
+    transformed_label_list: torch tensor (n, c, d, h, w)
     """
     params = read_config(confg_path)
+    transformed_image_list = []
+    transformed_label_list = []
 
-    if random() < params['augmentation']['general_spatial_probability']:
-        transformed_image, transformed_label = random_spatial_brats_augmentation(image[0], label[0], confg_path)
-        return transformed_image.unsqueeze(0), transformed_label.unsqueeze(0)
+    for image_file, label_file in zip(image, label):
 
-    elif random() < params['augmentation']['general_intensity_probability']:
-        transformed_image = random_intensity_brats_augmentation(image[0], confg_path)
-        return transformed_image.unsqueeze(0), label
+        if random() < params['augmentation']['general_spatial_probability']:
+            transformed_image, transformed_label = random_spatial_brats_augmentation(image_file, label_file, confg_path)
 
-    else:
-        return image, label
+            transformed_image = transformed_image.float()
+            transformed_label = transformed_label.int()
+            transformed_image_list.append(transformed_image)
+            transformed_label_list.append(transformed_label)
+
+        elif random() < params['augmentation']['general_intensity_probability']:
+            transformed_image = random_intensity_brats_augmentation(image_file, confg_path)
+
+            transformed_image = transformed_image.float()
+            label_file = label_file.int()
+            transformed_image_list.append(transformed_image)
+            transformed_label_list.append(label_file)
+
+        else:
+            image_file = image_file.float()
+            label_file = label_file.int()
+            transformed_image_list.append(image_file)
+            transformed_label_list.append(label_file)
+
+    transformed_image_list = torch.stack((transformed_image_list), 0)
+    transformed_label_list = torch.stack((transformed_label_list), 0)
+
+    return transformed_image_list, transformed_label_list
