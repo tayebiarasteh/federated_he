@@ -18,7 +18,7 @@ import syft as sy
 import copy
 
 from config.serde import read_config, write_config
-from data.augmentation_brats import random_augment
+from data.augmentation_brats import random_augment, patch_cropper
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -203,9 +203,13 @@ class Training:
             for idx, (image, label) in enumerate(train_loader):
                 self.model.train()
 
+                # if we are cropping patches from our data
+                if not image_downsample:
+                    image, label = patch_cropper(image, label, self.cfg_path)
+
                 # if we would like to have data augmentation during training
                 if self.augment:
-                    image, label = random_augment(image, label, image_downsample, self.cfg_path)
+                    image, label = random_augment(image, label, self.cfg_path)
 
                 image = image.to(self.device)
                 label = label.to(self.device)
@@ -233,7 +237,7 @@ class Training:
 
                 # saving the model, checkpoint, TensorBoard, etc.
                 if not valid_loader == None:
-                    valid_loss, valid_F1, valid_accuracy, valid_specifity, valid_sensitivity, valid_precision = self.valid_epoch(valid_loader)
+                    valid_loss, valid_F1, valid_accuracy, valid_specifity, valid_sensitivity, valid_precision = self.valid_epoch(valid_loader, image_downsample)
                     end_time = time.time()
                     iteration_hours, iteration_mins, iteration_secs = self.time_duration(start_time, end_time)
                     total_hours, total_mins, total_secs = self.time_duration(total_start_time, end_time)
@@ -513,7 +517,7 @@ class Training:
 
                 # saving the model, checkpoint, TensorBoard, etc.
                 if not valid_loader == None:
-                    valid_loss, valid_F1, valid_accuracy, valid_specifity, valid_sensitivity, valid_precision = self.valid_epoch(valid_loader)
+                    valid_loss, valid_F1, valid_accuracy, valid_specifity, valid_sensitivity, valid_precision = self.valid_epoch(valid_loader, image_downsample)
                     end_time = time.time()
                     iteration_hours, iteration_mins, iteration_secs = self.time_duration(start_time, end_time)
                     total_hours, total_mins, total_secs = self.time_duration(total_start_time, end_time)
@@ -543,9 +547,13 @@ class Training:
         # training epoch of a client
         for idx, (image, label) in enumerate(train_loader):
 
+            # if we are cropping patches from our data
+            if not image_downsample:
+                image, label = patch_cropper(image, label, self.cfg_path)
+
             # if we would like to have data augmentation during training
             if self.augment:
-                image, label = random_augment(image, label, image_downsample, self.cfg_path)
+                image, label = random_augment(image, label, self.cfg_path)
 
             loc = model.location
             image = image.send(loc)
@@ -573,7 +581,7 @@ class Training:
 
 
 
-    def valid_epoch(self, valid_loader):
+    def valid_epoch(self, valid_loader, image_downsample):
         """Validation epoch
 
         """
@@ -586,6 +594,11 @@ class Training:
         total_precision_score = []
 
         for idx, (image, label) in enumerate(valid_loader):
+
+            # if we are cropping patches from our data
+            if not image_downsample:
+                image, label = patch_cropper(image, label, self.cfg_path)
+
             image = image.to(self.device)
             label = label.to(self.device)
 

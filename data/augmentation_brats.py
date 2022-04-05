@@ -96,7 +96,7 @@ def random_spatial_brats_augmentation(image, label, confg_path='/home/soroosh/Do
         image = transform(image)
         label = transform(label)
 
-    assert len(label.unique()) == 2
+    assert len(label.unique()) < 3
     return image, label
 
 
@@ -133,7 +133,7 @@ def random_intensity_brats_augmentation(image, confg_path='/home/soroosh/Documen
 
 
 
-def random_augment(image, label, image_downsample, confg_path='/home/soroosh/Documents/Repositories/federated_he/config/config.yaml'):
+def random_augment(image, label, confg_path='/home/soroosh/Documents/Repositories/federated_he/config/config.yaml'):
     """
     Parameters
     ----------
@@ -152,58 +152,81 @@ def random_augment(image, label, image_downsample, confg_path='/home/soroosh/Doc
 
     for image_file, label_file in zip(image, label):
 
-        if not image_downsample:
-            # cropping (patching)
-            patch_d, patch_h, patch_w = params['augmentation']['patch_size']
-            batch_size, channels, slices, rows, columns = image.shape
-
-            if columns < patch_w:
-                diff = patch_w - columns
-                columns = patch_w
-                image_file = F.pad(image_file, (0, diff), "constant", 0)
-                label_file = F.pad(label_file, (0, diff), "constant", 0)
-            if rows < patch_h:
-                diff2 = patch_h - rows
-                rows = patch_h
-                image_file = F.pad(image_file, (0, 0, 0, diff2), "constant", 0)
-                label_file = F.pad(label_file, (0, 0, 0, diff2), "constant", 0)
-            if slices < patch_d:
-                flag = True
-                diff3 = patch_d - slices
-                slices = patch_d
-                image_file = F.pad(image_file, (0, 0, 0, 0, 0, diff3), "constant", 0)
-                label_file = F.pad(label_file, (0, 0, 0, 0, 0, diff3), "constant", 0)
-
-            dd = np.random.randint(slices - patch_d + 1)
-            hh = np.random.randint(rows - patch_h + 1)
-            ww = np.random.randint(columns - patch_w + 1)
-            image_file = image_file[:, dd:dd + patch_d, hh:hh + patch_h, ww:ww + patch_w]
-            label_file = label_file[:, dd:dd + patch_d, hh:hh + patch_h, ww:ww + patch_w]
-
-
         if random() < params['augmentation']['general_spatial_probability']:
-            transformed_image, transformed_label = random_spatial_brats_augmentation(image_file, label_file, confg_path)
+            image_file, label_file = random_spatial_brats_augmentation(image_file, label_file, confg_path)
 
-            transformed_image = transformed_image.float()
-            transformed_label = transformed_label.int()
-            transformed_image_list.append(transformed_image)
-            transformed_label_list.append(transformed_label)
-
-        elif random() < params['augmentation']['general_intensity_probability']:
-            transformed_image = random_intensity_brats_augmentation(image_file, confg_path)
-
-            transformed_image = transformed_image.float()
-            label_file = label_file.int()
-            transformed_image_list.append(transformed_image)
-            transformed_label_list.append(label_file)
-
-        else:
             image_file = image_file.float()
             label_file = label_file.int()
-            transformed_image_list.append(image_file)
-            transformed_label_list.append(label_file)
+
+        if random() < params['augmentation']['general_intensity_probability']:
+            image_file = random_intensity_brats_augmentation(image_file, confg_path)
+
+            image_file = image_file.float()
+            label_file = label_file.int()
+
+        transformed_image_list.append(image_file)
+        transformed_label_list.append(label_file)
 
     transformed_image_list = torch.stack((transformed_image_list), 0)
     transformed_label_list = torch.stack((transformed_label_list), 0)
 
     return transformed_image_list, transformed_label_list
+
+
+
+
+
+def patch_cropper(image, label, confg_path='/home/soroosh/Documents/Repositories/federated_he/config/config.yaml'):
+    """
+    Parameters
+    ----------
+    image: torch tensor (n, c, d, h, w)
+    label: torch tensor (n, c, d, h, w)
+    confg_path: str
+
+    Returns
+    -------
+    transformed_image_list: torch tensor (n, c, d, h, w)
+    transformed_label_list: torch tensor (n, c, d, h, w)
+    """
+    params = read_config(confg_path)
+    image_list = []
+    label_list = []
+
+    # cropping (patching)
+    for image_file, label_file in zip(image, label):
+
+        patch_d, patch_h, patch_w = params['augmentation']['patch_size']
+        batch_size, channels, slices, rows, columns = image.shape
+
+        if columns < patch_w:
+            diff = patch_w - columns
+            columns = patch_w
+            image_file = F.pad(image_file, (0, diff), "constant", 0)
+            label_file = F.pad(label_file, (0, diff), "constant", 0)
+        if rows < patch_h:
+            diff2 = patch_h - rows
+            rows = patch_h
+            image_file = F.pad(image_file, (0, 0, 0, diff2), "constant", 0)
+            label_file = F.pad(label_file, (0, 0, 0, diff2), "constant", 0)
+        if slices < patch_d:
+            diff3 = patch_d - slices
+            slices = patch_d
+            image_file = F.pad(image_file, (0, 0, 0, 0, 0, diff3), "constant", 0)
+            label_file = F.pad(label_file, (0, 0, 0, 0, 0, diff3), "constant", 0)
+
+        dd = np.random.randint(slices - patch_d + 1)
+        hh = np.random.randint(rows - patch_h + 1)
+        ww = np.random.randint(columns - patch_w + 1)
+        image_file = image_file[:, dd:dd + patch_d, hh:hh + patch_h, ww:ww + patch_w]
+        label_file = label_file[:, dd:dd + patch_d, hh:hh + patch_h, ww:ww + patch_w]
+
+        image_file = image_file.float()
+        label_file = label_file.int()
+        image_list.append(image_file)
+        label_list.append(label_file)
+
+    image_list = torch.stack((image_list), 0)
+    label_list = torch.stack((label_list), 0)
+
+    return image_list, label_list

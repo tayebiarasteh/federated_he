@@ -29,7 +29,7 @@ warnings.filterwarnings('ignore')
 
 
 def main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml", valid=False,
-                  resume=False, augment=False, experiment_name='name', modality=2, image_downsample=True):
+                  resume=False, augment=False, experiment_name='name', modality=2):
     """Main function for training + validation for directly 3d-wise
 
         Parameters
@@ -65,6 +65,7 @@ def main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositori
 
     # Changeable network parameters
     model = UNet3D(n_out_classes=3) # for multi label
+    image_downsample = params['Network']['image_downsample']
 
     loss_function = EDiceLoss # for multi label
     optimizer = torch.optim.Adam(model.parameters(), lr=float(params['Network']['lr']),
@@ -92,7 +93,7 @@ def main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositori
 
 
 def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml", valid=False,
-                  resume=False, augment=False, experiment_name='name', modality=2, HE=False, num_clients=3, image_downsample=True, precision_fractional=15):
+                  resume=False, augment=False, experiment_name='name', modality=2, HE=False, num_clients=3, precision_fractional=15):
     """Main function for training + validation for directly 3d-wise
 
         Parameters
@@ -140,6 +141,8 @@ def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Reposito
                                  weight_decay=float(params['Network']['weight_decay']), amsgrad=params['Network']['amsgrad'])
 
     num_workers = floor(16 / (num_clients + 1))
+    image_downsample = params['Network']['image_downsample']
+
     train_loader = []
     for num in range(num_clients):
         train_dataset_client = data_loader_3D(cfg_path=cfg_path, mode='train', site='site-' + str(num + 1), image_downsample=image_downsample)
@@ -164,7 +167,7 @@ def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Reposito
 
 
 def main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-                    experiment_name='name', modality=2, tta=False, image_downsample=True):
+                    experiment_name='name', modality=2, tta=False):
     """Evaluation (for local models) for all the images using the labels and calculating metrics.
 
     Parameters
@@ -175,6 +178,7 @@ def main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/fe
     params = open_experiment(experiment_name, global_config_path)
     cfg_path = params['cfg_path']
     model = UNet3D(n_out_classes=3)
+    image_downsample = params['Network']['image_downsample']
 
     # Initialize prediction
     predictor = Prediction(cfg_path)
@@ -224,7 +228,7 @@ def main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/fe
 
 
 def main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-                    experiment_name='name', modality=2, tta=False, image_downsample=True):
+                    experiment_name='name', modality=2, tta=False):
     """Prediction without evaluation for all the images.
 
     Parameters
@@ -235,6 +239,7 @@ def main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/fed
     params = open_experiment(experiment_name, global_config_path)
     cfg_path = params['cfg_path']
     model = UNet3D(n_out_classes=3)
+    image_downsample = params['Network']['image_downsample']
 
     # Initialize prediction
     predictor = Prediction(cfg_path)
@@ -283,12 +288,12 @@ def main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/fed
 
 
 if __name__ == '__main__':
-    delete_experiment(experiment_name='tempppnohe', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
+    # delete_experiment(experiment_name='tempppnohe', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
     # main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #               valid=True, resume=False, augment=True, experiment_name='tempppnohe', image_downsample=False)
-    main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-                  valid=True, resume=False, augment=True, experiment_name='tempppnohe', HE=True, num_clients=2, image_downsample=False, precision_fractional=15)
-    # main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #             experiment_name='central_no_augment_lr1e4_80_80_80', tta=True, image_downsample=True)
+    #               valid=True, resume=False, augment=True, experiment_name='tempppnohe')
+    # main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+    #               valid=True, resume=False, augment=True, experiment_name='tempppnohe', HE=False, num_clients=5, precision_fractional=15)
+    main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+                experiment_name='federated_5clients_unet48_batch1_flip_AWGN_gamma_lr1e4_80_80_80', tta=True)
     # main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #             experiment_name='4levelunet24_flip_gamma_AWGN_blur_zoomin_central_full_lr1e4_80_80_80', tta=False, image_downsample=True)
+    #             experiment_name='4levelunet24_flip_gamma_AWGN_blur_zoomin_central_full_lr1e4_80_80_80', tta=False)
