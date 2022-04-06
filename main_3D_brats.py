@@ -196,8 +196,8 @@ def main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/fe
 
     ### evaluation metrics
     print(f'\n\t Average Dice score (whole tumor): {test_F1.mean().item() * 100:.2f}% | accuracy: {test_accuracy.mean().item() * 100:.2f}%'
-          f' | specifity: {test_specifity.mean().item() * 100:.2f}%'
-          f' | recall (sensitivity): {test_sensitivity.mean().item() * 100:.2f}% | precision: {test_precision.mean().item() * 100:.2f}%\n')
+          f' | specifity WT: {test_specifity.mean().item() * 100:.2f}%'
+          f' | recall (sensitivity) WT: {test_sensitivity.mean().item() * 100:.2f}% | precision WT: {test_precision.mean().item() * 100:.2f}%\n')
 
     print('Individual Dice scores:')
     print(f'Dice label 1 (necrotic tumor core): {test_F1[0].item() * 100:.2f}%')
@@ -213,8 +213,8 @@ def main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/fe
           f' Experiment name: {experiment_name}\n\n' \
           f' test-time augmentation: {str(tta)} | Number of test images: {str(len(test_loader))}\n' \
           f'\n  Average Dice score (whole tumor): {test_F1.mean().item() * 100:.2f}% | accuracy: {test_accuracy.mean().item() * 100:.2f}% ' \
-          f' | specifity: {test_specifity.mean().item() * 100:.2f}%' \
-          f' | recall (sensitivity): {test_sensitivity.mean().item() * 100:.2f}% | precision: {test_precision.mean().item() * 100:.2f}%\n\n' \
+          f' | specifity WT: {test_specifity.mean().item() * 100:.2f}%' \
+          f' | recall (sensitivity) WT: {test_sensitivity.mean().item() * 100:.2f}% | precision WT: {test_precision.mean().item() * 100:.2f}%\n\n' \
           f'  Dice label 1 (necrotic tumor core): {test_F1[0].item() * 100:.2f}% | ' \
           f'Dice label 2 (peritumoral edematous/invaded tissue): {test_F1[1].item() * 100:.2f}%\n\n' \
           f'- Dice label 4, i.e., enhancing tumor (ET): {test_F1[2].item() * 100:.2f}%\n' \
@@ -288,12 +288,12 @@ def main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/fed
 
 
 if __name__ == '__main__':
-    # delete_experiment(experiment_name='tempppnohe', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
+    delete_experiment(experiment_name='tempppnohe', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
     # main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
     #               valid=True, resume=False, augment=True, experiment_name='tempppnohe')
-    # main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #               valid=True, resume=False, augment=True, experiment_name='tempppnohe', HE=False, num_clients=5, precision_fractional=15)
-    main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-                experiment_name='federated_5clients_unet48_batch1_flip_AWGN_gamma_lr1e4_80_80_80', tta=True)
+    main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+                  valid=True, resume=False, augment=True, experiment_name='tempppnohe', HE=True, num_clients=2, precision_fractional=15)
+    # main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+    #             experiment_name='central_unet48_batch1_flip_AWGN_gamma_lr1e4_80_80_80', tta=False)
     # main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
     #             experiment_name='4levelunet24_flip_gamma_AWGN_blur_zoomin_central_full_lr1e4_80_80_80', tta=False)

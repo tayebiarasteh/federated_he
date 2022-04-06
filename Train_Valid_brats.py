@@ -316,9 +316,9 @@ class Training:
             client_list[5].add_workers([client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], secure_worker])
             secure_worker.add_workers([client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], client_list[5]])
 
-        state_dict_list = []
+        self.state_dict_list = []
         for name in self.model.state_dict():
-            state_dict_list.append(name)
+            self.state_dict_list.append(name)
 
         total_start_time = time.time()
         for epoch in range(self.num_epochs - self.epoch):
@@ -342,55 +342,28 @@ class Training:
                 new_model_client_list.append(new_model_client)
                 loss_client_list.append(loss_client)
 
-            # ######## temp ############
-            # for idx in range(len(train_loader)):
-            #     new_model_client_list[idx].move(secure_worker)
-            # ######## temp ############
-
             temp_dict = {}
+            temp_dict_encrypted = {}
             if HE:
-                for weightbias in state_dict_list:
+                for weightbias in self.state_dict_list:
                     temp_one_param_list = []
 
                     if len(train_loader) == 2:
-                        if 'num_batches_tracked' in weightbias:
-                            current_precision_fractional = 7
-                        else:
-                            current_precision_fractional = precision_fractional
-                        temp_one_param_list.append(new_model_client_list[0].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[0].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], crypto_provider=secure_worker).get())
-                        temp_one_param_list.append(new_model_client_list[1].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[1].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], crypto_provider=secure_worker).get())
                         if 'num_batches_tracked' in weightbias:
                             temp_dict[weightbias] = torch.round((temp_one_param_list[0] + temp_one_param_list[1]).get().float_precision() / 2)
                         else:
                             temp_dict[weightbias] = (temp_one_param_list[0] + temp_one_param_list[1]).get().float_precision() / 2
 
-                        # ######## temp ############
-                        # diff_temp = temp_dict[weightbias].sum().item()
-                        # print("\nHE averaging:", diff_temp)
-                        #
-                        # temp_weight_list_copy = []
-                        # temp_dict_copy = {}
-                        #
-                        # temp_weight_list_copy.append(new_model_client_list[0].state_dict()[weightbias])
-                        # temp_weight_list_copy.append(new_model_client_list[1].state_dict()[weightbias])
-                        # temp_dict_copy[weightbias] = (sum(temp_weight_list_copy) / len(temp_weight_list_copy)).clone().get()
-                        # print("normal averaging:", temp_dict_copy[weightbias].sum().item())
-                        # print("difference:", temp_dict_copy[weightbias].sum().item() - diff_temp)
-                        # print("name:", weightbias)
-                        # ######## temp ############
-
                     elif len(train_loader) == 3:
-                        if 'num_batches_tracked' in weightbias:
-                            current_precision_fractional = 7
-                        else:
-                            current_precision_fractional = precision_fractional
-                        temp_one_param_list.append(new_model_client_list[0].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[0].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], crypto_provider=secure_worker).get())
-                        temp_one_param_list.append(new_model_client_list[1].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[1].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], crypto_provider=secure_worker).get())
-                        temp_one_param_list.append(new_model_client_list[2].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[2].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], crypto_provider=secure_worker).get())
                         if 'num_batches_tracked' in weightbias:
                             temp_dict[weightbias] = torch.round((temp_one_param_list[0] + temp_one_param_list[1] +
@@ -400,17 +373,13 @@ class Training:
                                                      temp_one_param_list[2]).get().float_precision() / 3
 
                     elif len(train_loader) == 4:
-                        if 'num_batches_tracked' in weightbias:
-                            current_precision_fractional = 7
-                        else:
-                            current_precision_fractional = precision_fractional
-                        temp_one_param_list.append(new_model_client_list[0].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[0].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], client_list[3], crypto_provider=secure_worker).get())
-                        temp_one_param_list.append(new_model_client_list[1].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[1].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], client_list[3], crypto_provider=secure_worker).get())
-                        temp_one_param_list.append(new_model_client_list[2].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[2].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], client_list[3], crypto_provider=secure_worker).get())
-                        temp_one_param_list.append(new_model_client_list[3].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[3].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], client_list[3], crypto_provider=secure_worker).get())
                         if 'num_batches_tracked' in weightbias:
                             temp_dict[weightbias] = torch.round((temp_one_param_list[0] + temp_one_param_list[1] +
@@ -420,19 +389,15 @@ class Training:
                                                      temp_one_param_list[2] + temp_one_param_list[3]).get().float_precision() / 4
 
                     elif len(train_loader) == 5:
-                        if 'num_batches_tracked' in weightbias:
-                            current_precision_fractional = 7
-                        else:
-                            current_precision_fractional = precision_fractional
-                        temp_one_param_list.append(new_model_client_list[0].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[0].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], crypto_provider=secure_worker).get())
-                        temp_one_param_list.append(new_model_client_list[1].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[1].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], crypto_provider=secure_worker).get())
-                        temp_one_param_list.append(new_model_client_list[2].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[2].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], crypto_provider=secure_worker).get())
-                        temp_one_param_list.append(new_model_client_list[3].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[3].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], crypto_provider=secure_worker).get())
-                        temp_one_param_list.append(new_model_client_list[4].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[4].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], crypto_provider=secure_worker).get())
                         if 'num_batches_tracked' in weightbias:
                             temp_dict[weightbias] = torch.round((temp_one_param_list[0] + temp_one_param_list[1] + temp_one_param_list[2] +
@@ -441,39 +406,18 @@ class Training:
                             temp_dict[weightbias] = (temp_one_param_list[0] + temp_one_param_list[1] + temp_one_param_list[2] +
                                                      temp_one_param_list[3] + temp_one_param_list[4]).get().float_precision() / 5
 
-                        # ######## temp ############
-                        # diff_temp = temp_dict[weightbias].sum().item()
-                        # print("\nHE averaging:", diff_temp)
-                        #
-                        # temp_weight_list_copy = []
-                        # temp_dict_copy = {}
-                        #
-                        # temp_weight_list_copy.append(new_model_client_list[0].state_dict()[weightbias])
-                        # temp_weight_list_copy.append(new_model_client_list[1].state_dict()[weightbias])
-                        # temp_weight_list_copy.append(new_model_client_list[2].state_dict()[weightbias])
-                        # temp_weight_list_copy.append(new_model_client_list[3].state_dict()[weightbias])
-                        # temp_weight_list_copy.append(new_model_client_list[4].state_dict()[weightbias])
-                        # temp_dict_copy[weightbias] = (sum(temp_weight_list_copy) / len(temp_weight_list_copy)).clone().get()
-                        # print("normal averaging:", temp_dict_copy[weightbias].sum().item())
-                        # print("difference:", temp_dict_copy[weightbias].sum().item() - diff_temp)
-                        # ######## temp ############
-
                     elif len(train_loader) == 6:
-                        if 'num_batches_tracked' in weightbias:
-                            current_precision_fractional = 7
-                        else:
-                            current_precision_fractional = precision_fractional
-                        temp_one_param_list.append(new_model_client_list[0].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[0].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], client_list[5], crypto_provider=secure_worker).get())
-                        temp_one_param_list.append(new_model_client_list[1].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[1].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], client_list[5], crypto_provider=secure_worker).get())
-                        temp_one_param_list.append(new_model_client_list[2].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[2].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], client_list[5], crypto_provider=secure_worker).get())
-                        temp_one_param_list.append(new_model_client_list[3].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[3].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], client_list[5], crypto_provider=secure_worker).get())
-                        temp_one_param_list.append(new_model_client_list[4].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[4].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], client_list[5], crypto_provider=secure_worker).get())
-                        temp_one_param_list.append(new_model_client_list[5].state_dict()[weightbias].fix_precision(precision_fractional=current_precision_fractional).share(
+                        temp_one_param_list.append(new_model_client_list[5].state_dict()[weightbias].fix_precision(precision_fractional=precision_fractional).share(
                             client_list[0], client_list[1], client_list[2], client_list[3], client_list[4], client_list[5], crypto_provider=secure_worker).get())
                         if 'num_batches_tracked' in weightbias:
                             temp_dict[weightbias] = torch.round((temp_one_param_list[0] + temp_one_param_list[1] + temp_one_param_list[2] +
@@ -486,7 +430,7 @@ class Training:
                 for idx in range(len(train_loader)):
                     new_model_client_list[idx].move(secure_worker)
 
-                for weightbias in state_dict_list:
+                for weightbias in self.state_dict_list:
                     temp_weight_list = []
                     for idx in range(len(train_loader)):
                         temp_weight_list.append(new_model_client_list[idx].state_dict()[weightbias])
@@ -733,8 +677,8 @@ class Training:
 
         if valid_loss:
             print(f'\t Val. loss: {valid_loss:.4f} | Average Dice score (whole tumor): {valid_F1.mean().item() * 100:.2f}% | accuracy: {valid_accuracy.mean().item() * 100:.2f}%'
-            f' | specifity: {valid_specifity.mean().item() * 100:.2f}%'
-            f' | recall (sensitivity): {valid_sensitivity.mean().item() * 100:.2f}% | precision: {valid_precision.mean().item() * 100:.2f}%\n')
+            f' | specifity WT: {valid_specifity.mean().item() * 100:.2f}%'
+            f' | recall (sensitivity) WT: {valid_sensitivity.mean().item() * 100:.2f}% | precision WT: {valid_precision.mean().item() * 100:.2f}%\n')
 
             # print('Individual F1 scores:')
             # print(f'Class 1: {valid_F1[0].item() * 100:.2f}%')
@@ -753,8 +697,8 @@ class Training:
                    f'epoch: {self.epoch} | epoch Time: {iteration_hours}h {iteration_mins}m {iteration_secs}s' \
                    f' | total time: {total_hours}h {total_mins}m {total_secs}s\n\n\tTrain loss: {train_loss:.4f} | ' \
                    f'Val. loss: {valid_loss:.4f} | Average Dice score (whole tumor): {valid_F1.mean().item() * 100:.2f}% | accuracy: {valid_accuracy.mean().item() * 100:.2f}% ' \
-                   f' | specifity: {valid_specifity.mean().item() * 100:.2f}%' \
-                   f' | recall (sensitivity): {valid_sensitivity.mean().item() * 100:.2f}% | precision: {valid_precision.mean().item() * 100:.2f}%\n\n' \
+                   f' | specifity WT: {valid_specifity.mean().item() * 100:.2f}%' \
+                   f' | recall (sensitivity) WT: {valid_sensitivity.mean().item() * 100:.2f}% | precision WT: {valid_precision.mean().item() * 100:.2f}%\n\n' \
                    f'  Dice label 1 (necrotic tumor core): {valid_F1[0].item() * 100:.2f}% | ' \
                    f'Dice label 2 (peritumoral edematous/invaded tissue): {valid_F1[1].item() * 100:.2f}%\n\n' \
                    f'- Dice label 4, i.e., enhancing tumor (ET): {valid_F1[2].item() * 100:.2f}%\n' \
@@ -788,10 +732,11 @@ class Training:
         """
         if valid_loss is not None:
             self.writer.add_scalar('Valid_loss', valid_loss, self.epoch)
-            self.writer.add_scalar('Valid_specifity', valid_specifity.mean().item(), self.epoch)
-            self.writer.add_scalar('Valid_F1_average', valid_F1.mean().item(), self.epoch)
-            self.writer.add_scalar('Valid_F1_label_1', valid_F1[0].item(), self.epoch)
-            self.writer.add_scalar('Valid_F1_label_2', valid_F1[1].item(), self.epoch)
-            self.writer.add_scalar('Valid_F1_label_4', valid_F1[2].item(), self.epoch)
-            self.writer.add_scalar('Valid_precision', valid_precision.mean().item(), self.epoch)
-            self.writer.add_scalar('Valid_recall_sensitivity', valid_sensitivity.mean().item(), self.epoch)
+            self.writer.add_scalar('Valid_specifity_WT', valid_specifity.mean().item(), self.epoch)
+            self.writer.add_scalar('Valid_Dice_WT', valid_F1.mean().item(), self.epoch)
+            self.writer.add_scalar('Valid_Dice_TC', ((valid_F1[0] + valid_F1[2])/ 2).item(), self.epoch)
+            self.writer.add_scalar('Valid_Dice_label_4_ET', valid_F1[2].item(), self.epoch)
+            self.writer.add_scalar('Valid_Dice_label_1', valid_F1[0].item(), self.epoch)
+            self.writer.add_scalar('Valid_Dice_label_2', valid_F1[1].item(), self.epoch)
+            self.writer.add_scalar('Valid_precision_WT', valid_precision.mean().item(), self.epoch)
+            self.writer.add_scalar('Valid_recall_sensitivity_WT', valid_sensitivity.mean().item(), self.epoch)

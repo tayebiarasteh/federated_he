@@ -4,8 +4,8 @@ Network:
   weight_decay: 0
   amsgrad: False
   image_downsample: True # if we want to downsample the images; otherwise we will crop a patch from images.
-#  resize_shape: [24,24,24] # d, h, w (training data are also stored in d, h, w). after cropping. multi mode 4-level. 4.7 GB for 48; 3.4 GB for 24
-  resize_shape: [80,80,80] # d, h, w (training data are also stored in d, h, w). after cropping. multi mode 4-level. 3.4 GB for 24
+  resize_shape: [24,24,24] # d, h, w (training data are also stored in d, h, w). after cropping. multi mode 4-level. 4.7 GB for 48; 3.4 GB for 24
+#  resize_shape: [80,80,80] # d, h, w (training data are also stored in d, h, w). after cropping. multi mode 4-level. 3.4 GB for 24
 #  resize_shape: [120,120,160] # d, h, w (training data are also stored in d, h, w). keep it dividable by 4; in syft padding is not possible
 augmentation:
   patch_size: [112, 112, 112] # if we don't use image down sampling, patches of this size will be cropped from original image
