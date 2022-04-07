@@ -357,7 +357,7 @@ if __name__ == '__main__':
     main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
                   valid=True, resume=False, augment=True, experiment_name='tempppnohe')
     # main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #               valid=True, resume=False, augment=True, experiment_name='tempppnohe', HE=True, num_clients=2, precision_fractional=15)
+    #               valid=True, resume=False, augment=True, experiment_name='tempppnohe', HE=True, num_clients=2, precision_fractional=16)
     # main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
     #             experiment_name='new_central_batch1_unet48_flip_AWGN_gamma_lr1e4_80_80_80', tta=False)
     # main_predict_3D_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",

@@ -100,7 +100,8 @@ class Training:
             elapsed_secs = int(elapsed_time - (elapsed_hours * 3600) - (elapsed_mins * 60))
         else:
             elapsed_mins = int(elapsed_time / 60)
-            elapsed_secs = int(elapsed_time - (elapsed_mins * 60))
+            elapsed_secs = elapsed_time - (elapsed_mins * 60)
+            # elapsed_secs = int(elapsed_time - (elapsed_mins * 60))
         return elapsed_hours, elapsed_mins, elapsed_secs
 
 
@@ -239,21 +240,23 @@ class Training:
                 if not valid_loader == None:
                     valid_loss, valid_F1, valid_accuracy, valid_specifity, valid_sensitivity, valid_precision = self.valid_epoch(valid_loader, image_downsample)
                     end_time = time.time()
+                    total_time = end_time - total_start_time
                     iteration_hours, iteration_mins, iteration_secs = self.time_duration(start_time, end_time)
                     total_hours, total_mins, total_secs = self.time_duration(total_start_time, end_time)
 
                     self.calculate_tb_stats(valid_loss=valid_loss, valid_F1=valid_F1, valid_accuracy=valid_accuracy, valid_specifity=valid_specifity,
                                             valid_sensitivity=valid_sensitivity, valid_precision=valid_precision)
                     self.savings_prints(iteration_hours, iteration_mins, iteration_secs, total_hours,
-                                        total_mins, total_secs, train_loss, valid_loss=valid_loss,
+                                        total_mins, total_secs, train_loss, total_time, valid_loss=valid_loss,
                                         valid_F1=valid_F1, valid_accuracy=valid_accuracy, valid_specifity= valid_specifity,
                                         valid_sensitivity=valid_sensitivity, valid_precision=valid_precision)
                 else:
                     end_time = time.time()
+                    total_time = end_time - total_start_time
                     iteration_hours, iteration_mins, iteration_secs = self.time_duration(start_time, end_time)
                     total_hours, total_mins, total_secs = self.time_duration(total_start_time, end_time)
                     self.savings_prints(iteration_hours, iteration_mins, iteration_secs, total_hours,
-                                        total_mins, total_secs, train_loss)
+                                        total_mins, total_secs, train_loss, total_time)
 
 
 
@@ -321,10 +324,15 @@ class Training:
             self.state_dict_list.append(name)
 
         total_start_time = time.time()
+        total_overhead_time = 0
+        total_datacopy_time = 0
+
         for epoch in range(self.num_epochs - self.epoch):
             self.epoch += 1
 
             start_time = time.time()
+            epoch_overhead_time = 0
+            epoch_datacopy_time = 0
             self.model.train()
 
             secure_worker.clear_objects()
@@ -338,10 +346,16 @@ class Training:
                 optimizer_client_list.append(torch.optim.Adam(model_client_list[idx].parameters(), lr=float(self.params['Network']['lr']),
                                                      weight_decay=float(self.params['Network']['weight_decay']),
                                                      amsgrad=self.params['Network']['amsgrad']))
-                new_model_client, loss_client = self.train_epoch_federated(train_loader[idx], optimizer_client_list[idx], model_client_list[idx], image_downsample)
+                total_overhead_time += (time.time() - start_time)
+                epoch_overhead_time += (time.time() - start_time)
+
+                new_model_client, loss_client, overhead = self.train_epoch_federated(train_loader[idx], optimizer_client_list[idx], model_client_list[idx], image_downsample)
+                total_datacopy_time += overhead
+                epoch_datacopy_time += overhead
                 new_model_client_list.append(new_model_client)
                 loss_client_list.append(loss_client)
 
+            communication_start_time = time.time()
             temp_dict = {}
             if HE:
                 for weightbias in self.state_dict_list:
@@ -436,6 +450,11 @@ class Training:
                     temp_dict[weightbias] = (sum(temp_weight_list) / len(temp_weight_list)).clone().get()
 
             self.model.load_state_dict(temp_dict)
+            total_overhead_time += (time.time() - communication_start_time)
+            epoch_overhead_time += (time.time() - communication_start_time)
+            epoch_overhead_hours, epoch_overhead_mins, epoch_overhead_secs = self.time_duration(0, epoch_overhead_time)
+            epoch_datacopy_hours, epoch_datacopy_mins, epoch_datacopy_secs = self.time_duration(0, epoch_datacopy_time)
+            total_datacopy_hours, total_datacopy_mins, total_datacopy_secs = self.time_duration(0, total_datacopy_time)
 
             # train loss just as an average of client losses
             train_loss = sum(loss_client_list) / len(loss_client_list)
@@ -447,8 +466,10 @@ class Training:
 
             print('------------------------------------------------------'
                   '----------------------------------')
-            print(f'train epoch {self.epoch} | time: {iteration_hours}h {iteration_mins}m {iteration_secs}s',
-                  f'| total: {total_hours}h {total_mins}m {total_secs}s')
+            print(f'train epoch {self.epoch} | time: {iteration_hours}h {iteration_mins}m {iteration_secs:.2f}s',
+                  f'| total: {total_hours}h {total_mins}m {total_secs:.2f}s | epoch communication overhead time: {epoch_overhead_hours}h {epoch_overhead_mins}m {epoch_overhead_secs:.2f}s '
+                  f'\nepoch data copying time: {epoch_datacopy_hours}h {epoch_datacopy_mins}m {epoch_datacopy_secs:.2f}s '
+                  f'| total data copying time: {total_datacopy_hours}h {total_datacopy_mins}m {total_datacopy_secs:.2f}s\n')
 
             for idx in range(len(train_loader)):
                 print('loss client{}: {:.3f}'.format((idx + 1), loss_client_list[idx]))
@@ -462,21 +483,23 @@ class Training:
                 if not valid_loader == None:
                     valid_loss, valid_F1, valid_accuracy, valid_specifity, valid_sensitivity, valid_precision = self.valid_epoch(valid_loader, image_downsample)
                     end_time = time.time()
+                    total_time = end_time - total_start_time
                     iteration_hours, iteration_mins, iteration_secs = self.time_duration(start_time, end_time)
                     total_hours, total_mins, total_secs = self.time_duration(total_start_time, end_time)
 
                     self.calculate_tb_stats(valid_loss=valid_loss, valid_F1=valid_F1, valid_accuracy=valid_accuracy,
                                             valid_specifity=valid_specifity, valid_sensitivity=valid_sensitivity, valid_precision=valid_precision)
                     self.savings_prints(iteration_hours, iteration_mins, iteration_secs, total_hours, total_mins,
-                                        total_secs, train_loss, valid_loss=valid_loss, valid_F1=valid_F1,
+                                        total_secs, train_loss, total_time, total_overhead_time, total_datacopy_time, valid_loss=valid_loss, valid_F1=valid_F1,
                                         valid_accuracy=valid_accuracy, valid_specifity=valid_specifity,
                                         valid_sensitivity=valid_sensitivity, valid_precision=valid_precision)
                 else:
                     end_time = time.time()
+                    total_time = end_time - total_start_time
                     iteration_hours, iteration_mins, iteration_secs = self.time_duration(start_time, end_time)
                     total_hours, total_mins, total_secs = self.time_duration(total_start_time, end_time)
                     self.savings_prints(iteration_hours, iteration_mins, iteration_secs, total_hours,
-                                        total_mins, total_secs, train_loss)
+                                        total_mins, total_secs, train_loss, total_time, total_overhead_time, total_datacopy_time)
 
 
 
@@ -486,6 +509,7 @@ class Training:
 
         batch_loss = 0
         model.train()
+        epoch_datacopy = 0
 
         # training epoch of a client
         for idx, (image, label) in enumerate(train_loader):
@@ -498,9 +522,11 @@ class Training:
             if self.augment:
                 image, label = random_augment(image, label, self.cfg_path)
 
+            communication_start_time = time.time()
             loc = model.location
             image = image.send(loc)
             label = label.send(loc)
+            epoch_datacopy += (time.time() - communication_start_time)
 
             image = image.to(self.device)
             label = label.to(self.device)
@@ -519,7 +545,7 @@ class Training:
         batch_loss = batch_loss.get().data
         avg_loss = batch_loss / len(train_loader)
 
-        return model, avg_loss.item()
+        return model, avg_loss.item(), epoch_datacopy
 
 
 
@@ -597,7 +623,7 @@ class Training:
 
 
     def savings_prints(self, iteration_hours, iteration_mins, iteration_secs, total_hours,
-                       total_mins, total_secs, train_loss, valid_loss=None, valid_F1=None, valid_accuracy=None,
+                       total_mins, total_secs, train_loss, total_time, total_overhead_time=0, total_datacopy_time=0, valid_loss=None, valid_F1=None, valid_accuracy=None,
                        valid_specifity=None, valid_sensitivity=None, valid_precision=None):
         """Saving the model weights, checkpoint, information,
         and training and validation loss and evaluation statistics.
@@ -642,6 +668,12 @@ class Training:
         self.params['Network']['num_epoch'] = self.epoch
         write_config(self.params, self.cfg_path, sort_keys=True)
 
+        overhead_hours, overhead_mins, overhead_secs = self.time_duration(0, total_overhead_time)
+        noncopy_time = total_time - total_datacopy_time
+        netto_time = total_time - total_overhead_time - total_datacopy_time
+        noncopy_hours, noncopy_mins, noncopy_secs = self.time_duration(0, noncopy_time)
+        netto_hours, netto_mins, netto_secs = self.time_duration(0, netto_time)
+
         # Saving the model based on the best loss
         if valid_loss:
             if valid_loss < self.best_loss:
@@ -670,19 +702,14 @@ class Training:
         print('------------------------------------------------------'
               '----------------------------------')
         print(f'epoch: {self.epoch} | '
-              f'epoch time: {iteration_hours}h {iteration_mins}m {iteration_secs}s | '
-              f'total time: {total_hours}h {total_mins}m {total_secs}s')
+              f'epoch time: {iteration_hours}h {iteration_mins}m {iteration_secs:.2f}s | '
+              f'total time: {total_hours}h {total_mins}m {total_secs:.2f}s | communication overhead time so far: {overhead_hours}h {overhead_mins}m {overhead_secs:.2f}s')
         print(f'\n\tTrain loss: {train_loss:.4f}')
 
         if valid_loss:
             print(f'\t Val. loss: {valid_loss:.4f} | Average Dice score (whole tumor): {valid_F1.mean().item() * 100:.2f}% | accuracy: {valid_accuracy.mean().item() * 100:.2f}%'
             f' | specifity WT: {valid_specifity.mean().item() * 100:.2f}%'
             f' | recall (sensitivity) WT: {valid_sensitivity.mean().item() * 100:.2f}% | precision WT: {valid_precision.mean().item() * 100:.2f}%\n')
-
-            # print('Individual F1 scores:')
-            # print(f'Class 1: {valid_F1[0].item() * 100:.2f}%')
-            # print(f'Class 2: {valid_F1[1].item() * 100:.2f}%')
-            # print(f'Class 3: {valid_F1[2].item() * 100:.2f}%\n')
 
             print('Individual Dice scores:')
             print(f'Dice label 1 (necrotic tumor core): {valid_F1[0].item() * 100:.2f}%')
@@ -693,8 +720,12 @@ class Training:
 
             # saving the training and validation stats
             msg = f'----------------------------------------------------------------------------------------\n' \
-                   f'epoch: {self.epoch} | epoch Time: {iteration_hours}h {iteration_mins}m {iteration_secs}s' \
-                   f' | total time: {total_hours}h {total_mins}m {total_secs}s\n\n\tTrain loss: {train_loss:.4f} | ' \
+                   f'epoch: {self.epoch} | epoch Time: {iteration_hours}h {iteration_mins}m {iteration_secs:.2f}s' \
+                   f' | total time: {total_hours}h {total_mins}m {total_secs:.2f}s | ' \
+                  f'communication overhead time so far: {overhead_hours}h {overhead_mins}m {overhead_secs:.2f}s\n' \
+                  f' | total time - copy time: {noncopy_hours}h {noncopy_mins}m {noncopy_secs:.2f}s' \
+                  f' | total time - copy time - overhead time: {netto_hours}h {netto_mins}m {netto_secs:.2f}s' \
+                  f'\n\n\tTrain loss: {train_loss:.4f} | ' \
                    f'Val. loss: {valid_loss:.4f} | Average Dice score (whole tumor): {valid_F1.mean().item() * 100:.2f}% | accuracy: {valid_accuracy.mean().item() * 100:.2f}% ' \
                    f' | specifity WT: {valid_specifity.mean().item() * 100:.2f}%' \
                    f' | recall (sensitivity) WT: {valid_sensitivity.mean().item() * 100:.2f}% | precision WT: {valid_precision.mean().item() * 100:.2f}%\n\n' \
@@ -705,8 +736,11 @@ class Training:
                    f'- Dice average all 1, 2, 4, i.e., whole tumor (WT): {valid_F1.mean().item() * 100:.2f}%\n\n'
         else:
             msg = f'----------------------------------------------------------------------------------------\n' \
-                   f'epoch: {self.epoch} | epoch time: {iteration_hours}h {iteration_mins}m {iteration_secs}s' \
-                   f' | total time: {total_hours}h {total_mins}m {total_secs}s\n\n\ttrain loss: {train_loss:.4f}\n\n'
+                   f'epoch: {self.epoch} | epoch time: {iteration_hours}h {iteration_mins}m {iteration_secs:.2f}s' \
+                   f' | total time: {total_hours}h {total_mins}m {total_secs:.2f}s\n\n\ttrain loss: {train_loss:.4f}' \
+                  f' | communication overhead time so far: {overhead_hours}h {overhead_mins}m {overhead_secs:.2f}s\n' \
+                  f' | total time - copy time: {noncopy_hours}h {noncopy_mins}m {noncopy_secs:.2f}s' \
+                  f' | total time - copy time - overhead time: {netto_hours}h {netto_mins}m {netto_secs:.2f}s\n\n'
         with open(os.path.join(self.params['target_dir'], self.params['stat_log_path']) + '/Stats', 'a') as f:
             f.write(msg)
 
