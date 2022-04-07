@@ -341,13 +341,14 @@ class Training:
             new_model_client_list = []
             loss_client_list = []
             for idx in range(len(train_loader)):
+                communication_start_time = time.time()
                 client_list[idx].clear_objects()
                 model_client_list.append(self.model.copy().send(client_list[idx]))
                 optimizer_client_list.append(torch.optim.Adam(model_client_list[idx].parameters(), lr=float(self.params['Network']['lr']),
                                                      weight_decay=float(self.params['Network']['weight_decay']),
                                                      amsgrad=self.params['Network']['amsgrad']))
-                total_overhead_time += (time.time() - start_time)
-                epoch_overhead_time += (time.time() - start_time)
+                total_overhead_time += (time.time() - communication_start_time)
+                epoch_overhead_time += (time.time() - communication_start_time)
 
                 new_model_client, loss_client, overhead = self.train_epoch_federated(train_loader[idx], optimizer_client_list[idx], model_client_list[idx], image_downsample)
                 total_datacopy_time += overhead
@@ -452,6 +453,7 @@ class Training:
             self.model.load_state_dict(temp_dict)
             total_overhead_time += (time.time() - communication_start_time)
             epoch_overhead_time += (time.time() - communication_start_time)
+
             epoch_overhead_hours, epoch_overhead_mins, epoch_overhead_secs = self.time_duration(0, epoch_overhead_time)
             epoch_datacopy_hours, epoch_datacopy_mins, epoch_datacopy_secs = self.time_duration(0, epoch_datacopy_time)
             total_datacopy_hours, total_datacopy_mins, total_datacopy_secs = self.time_duration(0, total_datacopy_time)
