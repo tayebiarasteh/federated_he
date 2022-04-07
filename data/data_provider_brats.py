@@ -70,7 +70,94 @@ class data_loader_3D(Dataset):
 
         if not site == None:
             self.subset_df = self.subset_df[self.subset_df['site'] == site]
-        self.file_path_list = list(self.subset_df['pat_num'])
+        self.file_path_list = list(self.subset_df['BraTS_2020_subject_ID'])
+
+        # path_pat = os.path.join(self.file_base_dir, str(self.file_path_list[0]))
+        # label_path = os.path.join(path_pat, str(self.file_path_list[0]) + '_seg.nii.gz')
+        # label = nib.load(label_path).get_fdata() # (h, w, d)
+        # label = label.transpose(2, 0, 1) # (d, h, w)
+        # label = label.astype(np.int) # (d, h, w)
+        #
+        # label1 = label.copy() # (d, h, w)
+        # label2 = label.copy() # (d, h, w)
+        # label4 = label.copy() # (d, h, w)
+        # label1 = np.where(label1 == 1, 1, 0) # (d, h, w)
+        # label2 = np.where(label2 == 2, 1, 0) # (d, h, w)
+        # label4 = np.where(label4 == 4, 1, 0) # (d, h, w)
+        #
+        # if self.multimodal:
+        #     path_file1 = os.path.join(path_pat, str(self.file_path_list[0]) + '_t1.nii.gz')
+        #     img1 = nib.load(path_file1).get_fdata()  # (h, w, d)
+        #     # normalization
+        #     normalized_img1 = self.irm_min_max_preprocess(img1)  # (h, w, d)
+        #     normalized_img1 = normalized_img1.transpose(2, 0, 1)  # (d, h, w)
+        #
+        #     path_file2 = os.path.join(path_pat, str(self.file_path_list[0]) + '_t1ce.nii.gz')
+        #     img2 = nib.load(path_file2).get_fdata()  # (h, w, d)
+        #     # normalization
+        #     normalized_img2 = self.irm_min_max_preprocess(img2)  # (h, w, d)
+        #     normalized_img2 = normalized_img2.transpose(2, 0, 1)  # (d, h, w)
+        #
+        #     path_file3 = os.path.join(path_pat, str(self.file_path_list[0]) + '_t2.nii.gz')
+        #     img3 = nib.load(path_file3).get_fdata()  # (h, w, d)
+        #     # normalization
+        #     normalized_img3 = self.irm_min_max_preprocess(img3)  # (h, w, d)
+        #     normalized_img3 = normalized_img3.transpose(2, 0, 1)  # (d, h, w)
+        #
+        #     path_file4 = os.path.join(path_pat, str(self.file_path_list[0]) + '_flair.nii.gz')
+        #     img4 = nib.load(path_file4).get_fdata()  # (h, w, d)
+        #     # normalization
+        #     normalized_img4 = self.irm_min_max_preprocess(img4)  # (h, w, d)
+        #     normalized_img4 = normalized_img4.transpose(2, 0, 1)  # (d, h, w)
+        #
+        #     # image resizing for memory issues
+        #     if self.image_downsample:
+        #         normalized_img_resized1, label1 = self.resize_manual(normalized_img1, label1)
+        #         normalized_img_resized2, label2 = self.resize_manual(normalized_img2, label2)
+        #         normalized_img_resized3, label4 = self.resize_manual(normalized_img3, label4)
+        #         normalized_img_resized4, _ = self.resize_manual(normalized_img4, label4)
+        #         normalized_img_resized = np.stack((normalized_img_resized1, normalized_img_resized2,
+        #                                            normalized_img_resized3, normalized_img_resized4))  # (c=4, d, h, w)
+        #     else:
+        #         normalized_img_resized = np.stack((normalized_img1, normalized_img2,
+        #                                            normalized_img3, normalized_img4))  # (c=4, d, h, w)
+        #     normalized_img_resized = torch.from_numpy(normalized_img_resized)  # (c=4, d, h, w)
+        #
+        # else:
+        #     if self.modality == 1:
+        #         path_file = os.path.join(path_pat, str(self.file_path_list[0]) + '_t1.nii.gz')
+        #     elif self.modality == 2:
+        #         path_file = os.path.join(path_pat, str(self.file_path_list[0]) + '_t1ce.nii.gz')
+        #     elif self.modality == 3:
+        #         path_file = os.path.join(path_pat, str(self.file_path_list[0]) + '_t2.nii.gz')
+        #     elif self.modality == 4:
+        #         path_file = os.path.join(path_pat, str(self.file_path_list[0]) + '_flair.nii.gz')
+        #     img = nib.load(path_file).get_fdata()
+        #     img = img.astype(np.float32)  # (h, w, d)
+        #     # normalization
+        #     normalized_img = self.irm_min_max_preprocess(img) # (h, w, d)
+        #     normalized_img = normalized_img.transpose(2, 0, 1)  # (d, h, w)
+        #
+        #     # image resizing for memory issues
+        #     if self.image_downsample:
+        #         normalized_img_resized, label1 = self.resize_manual(normalized_img, label1)
+        #         _, label2 = self.resize_manual(normalized_img, label2)
+        #         _, label4 = self.resize_manual(normalized_img, label4)
+        #     else:
+        #         normalized_img_resized = normalized_img
+        #     normalized_img_resized = torch.from_numpy(normalized_img_resized)  # (d, h, w)
+        #     normalized_img_resized = torch.unsqueeze(normalized_img_resized, 0)  # (c=1, d, h, w)
+        #
+        # label1 = torch.from_numpy(label1)  # (d, h, w)
+        # label2 = torch.from_numpy(label2)  # (d, h, w)
+        # label4 = torch.from_numpy(label4)  # (d, h, w)
+        # label = torch.stack((label1, label2, label4)) # (c=3, d, h, w)
+        #
+        # # normalized_img_resized = normalized_img_resized.half() # float16
+        # normalized_img_resized = normalized_img_resized.float() # float32
+        # label = label.int() # int32
+        # pdb.set_trace()
+
 
 
 
@@ -90,49 +177,50 @@ class data_loader_3D(Dataset):
         img: torch tensor
         label: torch tensor
         """
-        path_pat = os.path.join(self.file_base_dir, 'pat' + str(self.file_path_list[idx]).zfill(3))
-        path_file = os.path.join(path_pat, 'pat' + str(self.file_path_list[idx]).zfill(3) + '-mod' + str(self.modality) + '.nii.gz')
-        img = nib.load(path_file).get_fdata()
-        img = img.astype(np.float32)  # (d, h, w)
+        path_pat = os.path.join(self.file_base_dir, str(self.file_path_list[idx]))
+        label_path = os.path.join(path_pat, str(self.file_path_list[idx]) + '_seg.nii.gz')
+        label = nib.load(label_path).get_fdata() # (h, w, d)
+        label = label.transpose(2, 0, 1) # (d, h, w)
+        label = label.astype(np.int) # (d, h, w)
 
-        label_path1 = path_file.replace('-mod' + str(self.modality), '-seg-label1')
-        label1 = nib.load(label_path1).get_fdata()  # (d, h, w)
-        label_path2 = path_file.replace('-mod' + str(self.modality), '-seg-label2')
-        label2 = nib.load(label_path2).get_fdata()  # (d, h, w)
-        label_path3 = path_file.replace('-mod' + str(self.modality), '-seg-label3')
-        label3 = nib.load(label_path3).get_fdata()  # (d, h, w)
+        label1 = label.copy() # (d, h, w)
+        label2 = label.copy() # (d, h, w)
+        label4 = label.copy() # (d, h, w)
+        label1 = np.where(label1 == 1, 1, 0) # (d, h, w)
+        label2 = np.where(label2 == 2, 1, 0) # (d, h, w)
+        label4 = np.where(label4 == 4, 1, 0) # (d, h, w)
 
         if self.multimodal:
-            path_file1 = path_file.replace('-mod' + str(self.modality), '-mod1')
-            img1 = nib.load(path_file1).get_fdata()  # (d, h, w)
+            path_file1 = os.path.join(path_pat, str(self.file_path_list[idx]) + '_t1.nii.gz')
+            img1 = nib.load(path_file1).get_fdata()  # (h, w, d)
             # normalization
-            normalized_img1 = self.irm_min_max_preprocess(img1.transpose(1, 2, 0))  # (h, w, d)
+            normalized_img1 = self.irm_min_max_preprocess(img1)  # (h, w, d)
             normalized_img1 = normalized_img1.transpose(2, 0, 1)  # (d, h, w)
 
-            path_file2 = path_file.replace('-mod' + str(self.modality), '-mod2')
-            img2 = nib.load(path_file2).get_fdata()  # (d, h, w)
+            path_file2 = os.path.join(path_pat, str(self.file_path_list[idx]) + '_t1ce.nii.gz')
+            img2 = nib.load(path_file2).get_fdata()  # (h, w, d)
             # normalization
-            normalized_img2 = self.irm_min_max_preprocess(img2.transpose(1, 2, 0))  # (h, w, d)
+            normalized_img2 = self.irm_min_max_preprocess(img2)  # (h, w, d)
             normalized_img2 = normalized_img2.transpose(2, 0, 1)  # (d, h, w)
 
-            path_file3 = path_file.replace('-mod' + str(self.modality), '-mod3')
-            img3 = nib.load(path_file3).get_fdata()  # (d, h, w)
+            path_file3 = os.path.join(path_pat, str(self.file_path_list[idx]) + '_t2.nii.gz')
+            img3 = nib.load(path_file3).get_fdata()  # (h, w, d)
             # normalization
-            normalized_img3 = self.irm_min_max_preprocess(img3.transpose(1, 2, 0))  # (h, w, d)
+            normalized_img3 = self.irm_min_max_preprocess(img3)  # (h, w, d)
             normalized_img3 = normalized_img3.transpose(2, 0, 1)  # (d, h, w)
 
-            path_file4 = path_file.replace('-mod' + str(self.modality), '-mod4')
-            img4 = nib.load(path_file4).get_fdata()  # (d, h, w)
+            path_file4 = os.path.join(path_pat, str(self.file_path_list[idx]) + '_flair.nii.gz')
+            img4 = nib.load(path_file4).get_fdata()  # (h, w, d)
             # normalization
-            normalized_img4 = self.irm_min_max_preprocess(img4.transpose(1, 2, 0))  # (h, w, d)
+            normalized_img4 = self.irm_min_max_preprocess(img4)  # (h, w, d)
             normalized_img4 = normalized_img4.transpose(2, 0, 1)  # (d, h, w)
 
             # image resizing for memory issues
             if self.image_downsample:
                 normalized_img_resized1, label1 = self.resize_manual(normalized_img1, label1)
                 normalized_img_resized2, label2 = self.resize_manual(normalized_img2, label2)
-                normalized_img_resized3, label3 = self.resize_manual(normalized_img3, label3)
-                normalized_img_resized4, _ = self.resize_manual(normalized_img4, label3)
+                normalized_img_resized3, label4 = self.resize_manual(normalized_img3, label4)
+                normalized_img_resized4, _ = self.resize_manual(normalized_img4, label4)
                 normalized_img_resized = np.stack((normalized_img_resized1, normalized_img_resized2,
                                                    normalized_img_resized3, normalized_img_resized4))  # (c=4, d, h, w)
             else:
@@ -141,15 +229,25 @@ class data_loader_3D(Dataset):
             normalized_img_resized = torch.from_numpy(normalized_img_resized)  # (c=4, d, h, w)
 
         else:
+            if self.modality == 1:
+                path_file = os.path.join(path_pat, str(self.file_path_list[0]) + '_t1.nii.gz')
+            elif self.modality == 2:
+                path_file = os.path.join(path_pat, str(self.file_path_list[0]) + '_t1ce.nii.gz')
+            elif self.modality == 3:
+                path_file = os.path.join(path_pat, str(self.file_path_list[0]) + '_t2.nii.gz')
+            elif self.modality == 4:
+                path_file = os.path.join(path_pat, str(self.file_path_list[0]) + '_flair.nii.gz')
+            img = nib.load(path_file).get_fdata()
+            img = img.astype(np.float32)  # (h, w, d)
             # normalization
-            normalized_img = self.irm_min_max_preprocess(img.transpose(1, 2, 0)) # (h, w, d)
+            normalized_img = self.irm_min_max_preprocess(img) # (h, w, d)
             normalized_img = normalized_img.transpose(2, 0, 1)  # (d, h, w)
 
             # image resizing for memory issues
             if self.image_downsample:
                 normalized_img_resized, label1 = self.resize_manual(normalized_img, label1)
                 _, label2 = self.resize_manual(normalized_img, label2)
-                _, label3 = self.resize_manual(normalized_img, label3)
+                _, label4 = self.resize_manual(normalized_img, label4)
             else:
                 normalized_img_resized = normalized_img
             normalized_img_resized = torch.from_numpy(normalized_img_resized)  # (d, h, w)
@@ -157,8 +255,8 @@ class data_loader_3D(Dataset):
 
         label1 = torch.from_numpy(label1)  # (d, h, w)
         label2 = torch.from_numpy(label2)  # (d, h, w)
-        label3 = torch.from_numpy(label3)  # (d, h, w)
-        label = torch.stack((label1, label2, label3)) # (c=3, d, h, w)
+        label4 = torch.from_numpy(label4)  # (d, h, w)
+        label = torch.stack((label1, label2, label4)) # (c=3, d, h, w)
 
         # normalized_img_resized = normalized_img_resized.half() # float16
         normalized_img_resized = normalized_img_resized.float() # float32
@@ -270,6 +368,7 @@ class data_loader_without_label_3D():
         self.multimodal = multimodal
         self.image_downsample = image_downsample
         org_df = pd.read_csv(os.path.join(self.file_base_dir, "brats20_master_list.csv"), sep=',')
+        self.padding_df = pd.read_csv(os.path.join(self.file_base_dir, "officialvalidation_padding_after_cropping.csv"), sep=',')
 
         if mode=='train':
             self.subset_df = org_df[org_df['soroosh_split'] == 'train']

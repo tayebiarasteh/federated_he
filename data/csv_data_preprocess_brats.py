@@ -256,6 +256,130 @@ class csv_preprocess_brats():
 
 
 
+
+    def csv_divider_train_valid(self, num_clients=3):
+        """
+
+        Parameters
+        ----------
+        ratio: float
+            ratio of dividing to train and valid/test
+            0.1 means 10% valid, 10% test, 80% train
+
+        num_clients: int
+            number of federated clients for training
+        """
+
+        path = '/home/soroosh/Documents/datasets/BraTS20/old_BraTS20/cropped/brats20_master_list.csv'
+        output_df_path = '/home/soroosh/Documents/datasets/BraTS20/old_BraTS20/only_valid_master_lists/' + str(
+            num_clients) + '_clients/brats20_master_list.csv'
+        os.makedirs(os.path.dirname(output_df_path), exist_ok=True)
+
+        # initiating valid and train dfs
+        final_train_data = pd.DataFrame(
+            columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID', 'BraTS_2017_subject_ID',
+                     'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID', 'BraTS_2019_subject_ID', 'Age', 'Survival_days',
+                     'Extent_of_Resection', 'Grade'])
+        final_valid_data = pd.DataFrame(
+            columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID', 'BraTS_2017_subject_ID',
+                     'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID', 'BraTS_2019_subject_ID', 'Age', 'Survival_days',
+                     'Extent_of_Resection', 'Grade'])
+        final_all_data = pd.DataFrame(
+            columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID', 'BraTS_2017_subject_ID',
+                     'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID', 'BraTS_2019_subject_ID', 'Age', 'Survival_days',
+                     'Extent_of_Resection', 'Grade'])
+
+        df = pd.read_csv(path, sep=',')
+
+        subject_list = df['BraTS_2020_subject_ID'].unique().tolist()
+        random.shuffle(subject_list)
+        # val_num = ceil(len(subject_list) / (1 / ratio))
+
+        valid_subjects = subject_list[:39]
+        train_subjects = subject_list[39:]
+
+        # adding files to train
+        for subject in train_subjects:
+            selected_df = df[df['BraTS_2020_subject_ID'] == subject]
+            tempp = pd.DataFrame([[selected_df['pat_num'].values[0], 'train', selected_df['site'].values[0],
+                                   selected_df['BraTS_2020_subject_ID'].values[0],
+                                   selected_df['BraTS_2017_subject_ID'].values[0],
+                                   selected_df['BraTS_2018_subject_ID'].values[0],
+                                   selected_df['TCGA_TCIA_subject_ID'].values[0],
+                                   selected_df['BraTS_2019_subject_ID'].values[0], selected_df['Age'].values[0],
+                                   selected_df['Survival_days'].values[0], selected_df['Extent_of_Resection'].values[0],
+                                   selected_df['Grade'].values[0]]],
+                                 columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID',
+                                          'BraTS_2017_subject_ID', 'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID',
+                                          'BraTS_2019_subject_ID', 'Age', 'Survival_days', 'Extent_of_Resection',
+                                          'Grade'])
+            final_train_data = final_train_data.append(tempp)
+
+        # adding files to valid
+        for subject in valid_subjects:
+            selected_df = df[df['BraTS_2020_subject_ID'] == subject]
+            tempp = pd.DataFrame([[selected_df['pat_num'].values[0], 'valid', 'site-valid',
+                                   selected_df['BraTS_2020_subject_ID'].values[0],
+                                   selected_df['BraTS_2017_subject_ID'].values[0],
+                                   selected_df['BraTS_2018_subject_ID'].values[0],
+                                   selected_df['TCGA_TCIA_subject_ID'].values[0],
+                                   selected_df['BraTS_2019_subject_ID'].values[0], selected_df['Age'].values[0],
+                                   selected_df['Survival_days'].values[0], selected_df['Extent_of_Resection'].values[0],
+                                   selected_df['Grade'].values[0]]],
+                                 columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID',
+                                          'BraTS_2017_subject_ID', 'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID',
+                                          'BraTS_2019_subject_ID', 'Age', 'Survival_days', 'Extent_of_Resection',
+                                          'Grade'])
+            final_valid_data = final_valid_data.append(tempp)
+
+        per_client_images_num = ceil(len(final_train_data) / num_clients)
+
+        subject_list = final_train_data['BraTS_2020_subject_ID'].unique().tolist()
+        random.shuffle(subject_list)
+
+        client_list = []
+        for idx in range(num_clients):
+            client_list.append(subject_list[idx * per_client_images_num:(idx + 1) * per_client_images_num])
+
+        # initializing client dfs
+        final_client_train_data_list = []
+        for idx in range(num_clients):
+            final_client_train_data_list.append(pd.DataFrame(
+                columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID', 'BraTS_2017_subject_ID',
+                         'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID', 'BraTS_2019_subject_ID', 'Age',
+                         'Survival_days',
+                         'Extent_of_Resection', 'Grade']))
+
+        # adding files to clients
+        for idx, client in enumerate(client_list):
+            for subject in client:
+                selected_df = final_train_data[final_train_data['BraTS_2020_subject_ID'] == subject]
+                tempp = pd.DataFrame([[selected_df['pat_num'].values[0], 'train', 'site-' + str(idx + 1),
+                                       selected_df['BraTS_2020_subject_ID'].values[0],
+                                       selected_df['BraTS_2017_subject_ID'].values[0],
+                                       selected_df['BraTS_2018_subject_ID'].values[0],
+                                       selected_df['TCGA_TCIA_subject_ID'].values[0],
+                                       selected_df['BraTS_2019_subject_ID'].values[0], selected_df['Age'].values[0],
+                                       selected_df['Survival_days'].values[0],
+                                       selected_df['Extent_of_Resection'].values[0], selected_df['Grade'].values[0]]],
+                                     columns=['pat_num', 'soroosh_split', 'site', 'BraTS_2020_subject_ID',
+                                              'BraTS_2017_subject_ID', 'BraTS_2018_subject_ID', 'TCGA_TCIA_subject_ID',
+                                              'BraTS_2019_subject_ID', 'Age', 'Survival_days', 'Extent_of_Resection',
+                                              'Grade'])
+                final_client_train_data_list[idx] = final_client_train_data_list[idx].append(tempp)
+
+        # adding files to clients
+        for idx, client in enumerate(final_client_train_data_list):
+            final_all_data = final_all_data.append(client)
+
+        final_all_data = final_all_data.append(final_valid_data)
+
+        final_all_data = final_all_data.sort_values(['pat_num'])
+
+        final_all_data.to_csv(output_df_path, sep=',', index=False)
+
+
+
 class cropper():
     def __init__(self, cfg_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml"):
         """
@@ -267,7 +391,8 @@ class cropper():
         self.params = read_config(cfg_path)
         self.file_base_dir = self.params['file_path']
         org_df = pd.read_csv(os.path.join(self.file_base_dir, "brats20_master_list.csv"), sep=',')
-        self.df = org_df[org_df['pat_num'] > 72]
+        # self.df = org_df[org_df['pat_num'] > 72]
+        self.df = org_df[org_df['soroosh_split'] == 'test']
 
 
 
@@ -299,7 +424,7 @@ class cropper():
         return image[resizer]
 
 
-    def perform_cropping(self):
+    def perform_cropping_old_data(self):
 
         for index, row in tqdm(self.df.iterrows()):
             path_pat = os.path.join(self.file_base_dir, 'pat' + str(row['pat_num']).zfill(3))
@@ -426,9 +551,123 @@ class cropper():
             nib.save(resultt, path_file)
 
 
+    def perform_cropping_new_data(self):
+
+        # initializing the df for padding later to the original size
+        final_df = pd.DataFrame(columns=['pat', 'left_h_first_dim', 'right_h_first_dim', 'left_w_second_dim', 'right_w_second_dim', 'left_d_third_dim', 'right_d_third_dim'])
+
+        for index, row in tqdm(self.df.iterrows()):
+            path_pat = os.path.join(self.file_base_dir, str(row['BraTS_2020_subject_ID']))
+            path_file = os.path.join(path_pat, str(row['BraTS_2020_subject_ID']) + '_t1.nii.gz')
+            x_input_nifti = nib.load(path_file)
+            data = x_input_nifti.get_fdata() # (h, w, d)
+            data = np.expand_dims(data, 0) # (1, h, w, d)
+
+            nonzero_mask = self.create_nonzero_mask(data)
+            bbox = self.get_bbox_from_mask(nonzero_mask, 0)
+            final_df = final_df.append(pd.DataFrame([[str(row['BraTS_2020_subject_ID']), bbox[0][0], data.shape[1] - bbox[0][1],
+                                                      bbox[1][0], data.shape[2] - bbox[1][1], bbox[2][0], data.shape[3] - bbox[2][1]]],
+                                                    columns=['pat', 'left_h_first_dim', 'right_h_first_dim', 'left_w_second_dim',
+                                                             'right_w_second_dim', 'left_d_third_dim', 'right_d_third_dim']))
+            cropped_data = []
+            for c in range(data.shape[0]):
+                cropped = self.crop_to_bbox(data[c], bbox)
+                cropped_data.append(cropped[None])
+            data = np.vstack(cropped_data) # (1, h, w, d)
+            x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
+            # x_input_nifti.affine[0, 3] -= bbox[0][0] - 1
+            # x_input_nifti.affine[1, 3] -= bbox[1][0] - 1
+            # x_input_nifti.affine[2, 3] -= bbox[2][0] - 1
+            resultt = nib.Nifti1Image(data[0], affine=x_input_nifti.affine, header=x_input_nifti.header)
+            path_file_output = path_file.replace('/original/', '/cropped/')
+            os.makedirs(os.path.dirname(path_file.replace('/original/', '/cropped/')), exist_ok=True)
+
+            nib.save(resultt, path_file_output) # (h, w, d)
+
+            # mod2
+            path_file = os.path.join(path_pat, str(row['BraTS_2020_subject_ID']) + '_t1ce.nii.gz')
+            x_input_nifti = nib.load(path_file)
+            data = x_input_nifti.get_fdata()
+            data = np.expand_dims(data, 0)
+            cropped_data = []
+            for c in range(data.shape[0]):
+                cropped = self.crop_to_bbox(data[c], bbox)
+                cropped_data.append(cropped[None])
+            data = np.vstack(cropped_data)
+            x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
+            # x_input_nifti.affine[0, 3] -= bbox[0][0] - 1
+            # x_input_nifti.affine[1, 3] -= bbox[1][0] - 1
+            # x_input_nifti.affine[2, 3] -= bbox[2][0] - 1
+            resultt = nib.Nifti1Image(data[0], affine=x_input_nifti.affine, header=x_input_nifti.header)
+            path_file_output = path_file.replace('/original/', '/cropped/')
+            os.makedirs(os.path.dirname(path_file.replace('/original/', '/cropped/')), exist_ok=True)
+            nib.save(resultt, path_file_output) # (h, w, d)
+
+            # mod3
+            path_file = os.path.join(path_pat, str(row['BraTS_2020_subject_ID']) + '_t2.nii.gz')
+            x_input_nifti = nib.load(path_file)
+            data = x_input_nifti.get_fdata()
+            data = np.expand_dims(data, 0)
+            cropped_data = []
+            for c in range(data.shape[0]):
+                cropped = self.crop_to_bbox(data[c], bbox)
+                cropped_data.append(cropped[None])
+            data = np.vstack(cropped_data)
+            x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
+            # x_input_nifti.affine[0, 3] -= bbox[0][0] - 1
+            # x_input_nifti.affine[1, 3] -= bbox[1][0] - 1
+            # x_input_nifti.affine[2, 3] -= bbox[2][0] - 1
+            resultt = nib.Nifti1Image(data[0], affine=x_input_nifti.affine, header=x_input_nifti.header)
+            path_file_output = path_file.replace('/original/', '/cropped/')
+            os.makedirs(os.path.dirname(path_file.replace('/original/', '/cropped/')), exist_ok=True)
+            nib.save(resultt, path_file_output) # (h, w, d)
+
+            # mod4
+            path_file = os.path.join(path_pat, str(row['BraTS_2020_subject_ID']) + '_flair.nii.gz')
+            x_input_nifti = nib.load(path_file)
+            data = x_input_nifti.get_fdata()
+            data = np.expand_dims(data, 0)
+            cropped_data = []
+            for c in range(data.shape[0]):
+                cropped = self.crop_to_bbox(data[c], bbox)
+                cropped_data.append(cropped[None])
+            data = np.vstack(cropped_data)
+            x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
+            # x_input_nifti.affine[0, 3] -= bbox[0][0] - 1
+            # x_input_nifti.affine[1, 3] -= bbox[1][0] - 1
+            # x_input_nifti.affine[2, 3] -= bbox[2][0] - 1
+            resultt = nib.Nifti1Image(data[0], affine=x_input_nifti.affine, header=x_input_nifti.header)
+            path_file_output = path_file.replace('/original/', '/cropped/')
+            os.makedirs(os.path.dirname(path_file.replace('/original/', '/cropped/')), exist_ok=True)
+            nib.save(resultt, path_file_output) # (h, w, d)
+
+            # # seg-label
+            # path_file = os.path.join(path_pat, str(row['BraTS_2020_subject_ID']) + '_seg.nii.gz')
+            # x_input_nifti = nib.load(path_file)
+            # data = x_input_nifti.get_fdata()
+            # data = np.expand_dims(data, 0)
+            # cropped_data = []
+            # for c in range(data.shape[0]):
+            #     cropped = self.crop_to_bbox(data[c], bbox)
+            #     cropped_data.append(cropped[None])
+            # data = np.vstack(cropped_data)
+            # x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
+            # # x_input_nifti.affine[0, 3] -= bbox[0][0] - 1
+            # # x_input_nifti.affine[1, 3] -= bbox[1][0] - 1
+            # # x_input_nifti.affine[2, 3] -= bbox[2][0] - 1
+            # resultt = nib.Nifti1Image(data[0].astype(np.uint8), affine=x_input_nifti.affine, header=x_input_nifti.header)
+            # path_file_output = path_file.replace('/original/', '/cropped/')
+            # os.makedirs(os.path.dirname(path_file.replace('/original/', '/cropped/')), exist_ok=True)
+            # nib.save(resultt, path_file_output) # (h, w, d)
+
+        final_df.to_csv('/home/soroosh/Documents/datasets/BraTS20/new_BraTS20/officialvalidation_padding_after_cropping.csv', sep=',', index=False)
+
+
+
 
 if __name__ == '__main__':
-    handler = csv_preprocess_brats()
-    handler.csv_divider_train_valid_test(num_clients=2)
-    # crroppper = cropper()
-    # crroppper = crroppper.perform_cropping()
+    # handler = csv_preprocess_brats()
+    # handler.csv_divider_train_valid_test(num_clients=5)
+    # handler.csv_divider_train_valid(num_clients=5)
+    crroppper = cropper()
+    crroppper = crroppper.perform_cropping_new_data()

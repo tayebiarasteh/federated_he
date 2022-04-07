@@ -343,7 +343,6 @@ class Training:
                 loss_client_list.append(loss_client)
 
             temp_dict = {}
-            temp_dict_encrypted = {}
             if HE:
                 for weightbias in self.state_dict_list:
                     temp_one_param_list = []

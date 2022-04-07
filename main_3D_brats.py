@@ -227,7 +227,7 @@ def main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/fe
 
 
 
-def main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+def main_predict_3D_multilabel_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
                     experiment_name='name', modality=2, tta=False):
     """Prediction without evaluation for all the images.
 
@@ -281,7 +281,72 @@ def main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/fed
 
 
 
+def main_predict_3D_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+                    experiment_name='name', modality=2, tta=False):
+    """Prediction without evaluation for all the images.
 
+    Parameters
+    ----------
+    experiment_name: str
+        name of the experiment to be loaded.
+    """
+    params = open_experiment(experiment_name, global_config_path)
+    cfg_path = params['cfg_path']
+    model = UNet3D(n_out_classes=3)
+    image_downsample = params['Network']['image_downsample']
+
+    # Initialize prediction
+    predictor = Prediction(cfg_path)
+    predictor.setup_model(model=model)
+
+    # Generate test set
+    test_dataset = data_loader_without_label_3D(cfg_path=cfg_path, mode='test', image_downsample=image_downsample)
+
+    for idx in tqdm(range(len(test_dataset.file_path_list))):
+        path_pat = os.path.join(test_dataset.file_base_dir, 'pat' + str(test_dataset.file_path_list[idx]).zfill(3))
+        path_file = os.path.join(path_pat, 'pat' + str(test_dataset.file_path_list[idx]).zfill(3) + '-mod' + str(
+            test_dataset.modality) + '.nii.gz')
+
+        padding_df_pat = test_dataset.padding_df[test_dataset.padding_df['pat'] == test_dataset.file_path_list[idx]]
+        x_input, x_input_nifti, img_resized, scaling_ratio = test_dataset.provide_test_without_label(file_path=path_file)
+
+        if tta:
+            output_sigmoided = predictor.predict_3D_tta(x_input) # (d,h,w)
+        else:
+            output_sigmoided = predictor.predict_3D(x_input) # (d,h,w)
+        output_sigmoided = output_sigmoided.cpu().detach().numpy()
+
+        x_input_nifti.header['pixdim'][1:4] = scaling_ratio
+        x_input_nifti.header['dim'][1:4] = np.array(img_resized.shape)
+        x_input_nifti.affine[0, 0] = scaling_ratio[0]
+        x_input_nifti.affine[1, 1] = scaling_ratio[1]
+        x_input_nifti.affine[2, 2] = scaling_ratio[2]
+
+        output_sigmoided = output_sigmoided.transpose(0, 1, 3, 4, 2) # (n, c, h, w, d)
+
+        label1 = output_sigmoided[0,0].copy()
+        label2 = output_sigmoided[0,1].copy()
+        label4 = output_sigmoided[0,2].copy()
+        label1 = np.where(label1 == 1, 1, 0) # (h, w, d)
+        label2 = np.where(label2 == 1, 2, 0) # (h, w, d)
+        label4 = np.where(label4 == 1, 4, 0) # (h, w, d)
+
+        label = label1 + label2 + label4 # (h, w, d)
+
+        label = np.where(label == 3, 1, label) # (h, w, d)
+        label = np.where(label == 5, 4, label) # (h, w, d)
+        label = np.where(label == 6, 2, label) # (h, w, d)
+
+        # padding the cropped image back to the original size
+        label = np.pad(label, [(padding_df_pat['left_h_first_dim'], padding_df_pat['right_h_first_dim']),
+                               (padding_df_pat['left_w_second_dim'], padding_df_pat['right_w_second_dim']),
+                               (padding_df_pat['left_d_third_dim'], padding_df_pat['right_d_third_dim'])], mode='constant')
+
+        label = label.astype(np.uint8)
+
+        segmentation = nib.Nifti1Image(label, affine=x_input_nifti.affine, header=x_input_nifti.header)
+        nib.save(segmentation, os.path.join(params['target_dir'], params['output_data_path'], os.path.basename(path_file).replace('.nii.gz', '-label.nii.gz')))
+        pdb.set_trace()
 
 
 
@@ -289,11 +354,11 @@ def main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/fed
 
 if __name__ == '__main__':
     delete_experiment(experiment_name='tempppnohe', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
-    # main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #               valid=True, resume=False, augment=True, experiment_name='tempppnohe')
-    main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-                  valid=True, resume=False, augment=True, experiment_name='tempppnohe', HE=True, num_clients=2, precision_fractional=15)
+    main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+                  valid=True, resume=False, augment=True, experiment_name='tempppnohe')
+    # main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+    #               valid=True, resume=False, augment=True, experiment_name='tempppnohe', HE=True, num_clients=2, precision_fractional=15)
     # main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #             experiment_name='central_unet48_batch1_flip_AWGN_gamma_lr1e4_80_80_80', tta=False)
-    # main_predict_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+    #             experiment_name='new_central_batch1_unet48_flip_AWGN_gamma_lr1e4_80_80_80', tta=False)
+    # main_predict_3D_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
     #             experiment_name='4levelunet24_flip_gamma_AWGN_blur_zoomin_central_full_lr1e4_80_80_80', tta=False)
