@@ -95,7 +95,7 @@ def random_spatial_brats_augmentation(image, label, confg_path='/home/soroosh/Do
         image = transform(image)
         label = transform(label)
 
-    assert len(label.unique()) < 3
+    assert len(label.unique()) < 5
     return image, label
 
 
@@ -110,23 +110,30 @@ def random_intensity_brats_augmentation(image, confg_path='/home/soroosh/Documen
         transform = tio.RandomNoise(mean=params['augmentation']['mu_AWGN'], std=params['augmentation']['sigma_AWGN'])
         return transform(image)
 
-    if random() < params['augmentation']['gamma_prob']:
-        transform = tio.RandomGamma(log_gamma=(params['augmentation']['gamma_range'][0], params['augmentation']['gamma_range'][1]))
-        return transform(image)
+    elif random() < params['augmentation']['gamma_prob']:
+        # transform = tio.RandomGamma(log_gamma=(params['augmentation']['gamma_range'][0], params['augmentation']['gamma_range'][1]))
+        X_new = torch.zeros(image.shape)
+        for c in range(image.shape[0]):
+            im = image[c, :, :, :]
+            gain, gamma = (params['augmentation']['gamma_range'][1] - params['augmentation']['gamma_range'][0]) * torch.rand(2) + params['augmentation']['gamma_range'][0]
+            im_new = torch.sign(im) * gain * (torch.abs(im) ** gamma)
+            X_new[c, :, :, :] = im_new
+        return X_new
 
-    if random() < params['augmentation']['motion_prob']:
+    elif random() < params['augmentation']['motion_prob']:
         transform = tio.RandomMotion(degrees=10, translation=10, num_transforms=2)
         return transform(image)
 
-    if random() < params['augmentation']['ghosting_prob']:
+    elif random() < params['augmentation']['ghosting_prob']:
         transform = tio.RandomGhosting(num_ghosts=10, axes=(0, 1, 3), intensity=0.3)
         return transform(image)
 
-    if random() < params['augmentation']['blurring_prob']:
+    elif random() < params['augmentation']['blurring_prob']:
         transform = tio.RandomBlur(std=(params['augmentation']['gamma_range'][0], params['augmentation']['gamma_range'][1]))
         return transform(image)
 
-    return image
+    else:
+        return image
 
 
 

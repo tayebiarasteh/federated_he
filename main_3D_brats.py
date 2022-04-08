@@ -19,9 +19,10 @@ from math import floor
 from config.serde import open_experiment, create_experiment, delete_experiment, write_config
 from Train_Valid_brats import Training
 from Prediction_brats import Prediction
-from data.data_provider_brats import data_loader_3D, data_loader_without_label_3D
+from data.data_provider_brats import data_loader_3D, data_loader_without_label_3D, data_loader_3D_multiclass
 from models.UNet3D import UNet3D
 from models.EDiceLoss_loss import EDiceLoss
+from models.generalizeddice import GeneralizedDiceLoss
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -64,18 +65,19 @@ def main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositori
     cfg_path = params["cfg_path"]
 
     # Changeable network parameters
-    model = UNet3D(n_out_classes=3) # for multi label
+    model = UNet3D(n_out_classes=4, firstdim=64) # for multiclass
     image_downsample = params['Network']['image_downsample']
 
-    loss_function = EDiceLoss # for multi label
+    # loss_function = EDiceLoss # for multi label
+    loss_function = GeneralizedDiceLoss # for multiclass
     optimizer = torch.optim.Adam(model.parameters(), lr=float(params['Network']['lr']),
                                  weight_decay=float(params['Network']['weight_decay']), amsgrad=params['Network']['amsgrad'])
 
-    train_dataset = data_loader_3D(cfg_path=cfg_path, mode='train', image_downsample=image_downsample)
+    train_dataset = data_loader_3D_multiclass(cfg_path=cfg_path, mode='train', image_downsample=image_downsample)
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=params['Network']['batch_size'],
                                                pin_memory=True, drop_last=True, shuffle=True, num_workers=10)
     if valid:
-        valid_dataset = data_loader_3D(cfg_path=cfg_path, mode='valid', image_downsample=image_downsample)
+        valid_dataset = data_loader_3D_multiclass(cfg_path=cfg_path, mode='valid', image_downsample=image_downsample)
         valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset, batch_size=params['Network']['batch_size'],
                                                    pin_memory=True, drop_last=True, shuffle=False, num_workers=5)
     else:
@@ -134,9 +136,10 @@ def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Reposito
     cfg_path = params["cfg_path"]
 
     # Changeable network parameters
-    model = UNet3D(n_out_classes=3) # for multi label
+    model = UNet3D(n_out_classes=4, firstdim=64) # for multiclass
 
-    loss_function = EDiceLoss # for multi label
+    # loss_function = EDiceLoss # for multi label
+    loss_function = GeneralizedDiceLoss # for multiclass
     optimizer = torch.optim.Adam(model.parameters(), lr=float(params['Network']['lr']),
                                  weight_decay=float(params['Network']['weight_decay']), amsgrad=params['Network']['amsgrad'])
 
@@ -145,11 +148,11 @@ def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Reposito
 
     train_loader = []
     for num in range(num_clients):
-        train_dataset_client = data_loader_3D(cfg_path=cfg_path, mode='train', site='site-' + str(num + 1), image_downsample=image_downsample)
+        train_dataset_client = data_loader_3D_multiclass(cfg_path=cfg_path, mode='train', site='site-' + str(num + 1), image_downsample=image_downsample)
         train_loader.append(torch.utils.data.DataLoader(dataset=train_dataset_client, batch_size=params['Network']['batch_size'],
                                                            pin_memory=True, drop_last=True, shuffle=False, num_workers=num_workers))
     if valid:
-        valid_dataset = data_loader_3D(cfg_path=cfg_path, mode='valid', image_downsample=image_downsample)
+        valid_dataset = data_loader_3D_multiclass(cfg_path=cfg_path, mode='valid', image_downsample=image_downsample)
         valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset, batch_size=params['Network']['batch_size'],
                                                    pin_memory=True, drop_last=True, shuffle=False, num_workers=num_workers)
     else:
@@ -354,10 +357,10 @@ def main_predict_3D_multiclass_output(global_config_path="/home/soroosh/Document
 
 if __name__ == '__main__':
     delete_experiment(experiment_name='tempppnohe', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
-    main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-                  valid=True, resume=False, augment=True, experiment_name='tempppnohe')
-    # main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #               valid=True, resume=False, augment=True, experiment_name='tempppnohe', HE=True, num_clients=2, precision_fractional=16)
+    # main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+    #               valid=True, resume=False, augment=True, experiment_name='tempppnohe')
+    main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+                  valid=True, resume=False, augment=True, experiment_name='tempppnohe', HE=True, num_clients=2, precision_fractional=16)
     # main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
     #             experiment_name='new_central_batch1_unet48_flip_AWGN_gamma_lr1e4_80_80_80', tta=False)
     # main_predict_3D_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",

@@ -19,6 +19,7 @@ import copy
 
 from config.serde import read_config, write_config
 from data.augmentation_brats import random_augment, patch_cropper
+from models.generalizeddice import expand_as_one_hot
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -220,9 +221,10 @@ class Training:
                 with torch.set_grad_enabled(True):
 
                     output = self.model(image)
+                    one_hot_label = expand_as_one_hot(label.long()[:, 0], 4)
 
                     # loss = self.loss_function(output, label[:, 0]) # for cross entropy loss
-                    loss = self.loss_function(output, label) # for dice loss
+                    loss = self.loss_function(output, one_hot_label) # for multiclass dice loss
 
                     loss.backward()
                     self.optimiser.step()
@@ -524,21 +526,25 @@ class Training:
             if self.augment:
                 image, label = random_augment(image, label, self.cfg_path)
 
+            one_hot_label = expand_as_one_hot(label.long()[:, 0], 4)
+
             communication_start_time = time.time()
             loc = model.location
             image = image.send(loc)
-            label = label.send(loc)
+            one_hot_label = one_hot_label.send(loc)
             epoch_datacopy += (time.time() - communication_start_time)
 
             image = image.to(self.device)
-            label = label.to(self.device)
+            one_hot_label = one_hot_label.to(self.device)
 
             optimizer.zero_grad()
 
             with torch.set_grad_enabled(True):
 
                 output = model(image)
-                loss_client = self.loss_function(output, label)  # for dice loss
+                # loss_client = self.loss_function(output, label)  # for multilabel dice loss
+                loss_client = self.loss_function(output, one_hot_label)  # for multiclass dice loss
+
                 loss_client.backward()
                 optimizer.step()
 
@@ -558,11 +564,11 @@ class Training:
         """
         self.model.eval()
         total_loss = 0.0
-        total_f1_score = []
-        total_accuracy = []
-        total_specifity_score = []
-        total_sensitivity_score = []
-        total_precision_score = []
+        total_accuracy = 0.0
+        total_f1_score = torch.zeros((3)).to(self.device)
+        total_specifity_score = torch.zeros((3)).to(self.device)
+        total_sensitivity_score = torch.zeros((3)).to(self.device)
+        total_precision_score = torch.zeros((3)).to(self.device)
 
         for idx, (image, label) in enumerate(valid_loader):
 
@@ -576,52 +582,41 @@ class Training:
             with torch.no_grad():
                 output = self.model(image)
                 # loss = self.loss_function(output, label[:, 0]) # for cross entropy loss
-                loss = self.loss_function(output, label)  # for dice loss
+                # loss = self.loss_function(output, label)  # for dice loss
 
-                # max_preds = output.argmax(dim=1, keepdim=True)  # get the index of the max probability (multi-class)
-                output_sigmoided = F.sigmoid(output.permute(0, 2, 3, 4, 1))
-                output_sigmoided = (output_sigmoided > 0.5).float()
+                one_hot_label = expand_as_one_hot(label.long()[:, 0], 4)
+                loss = self.loss_function(output, one_hot_label)  # for multiclass dice loss
+
+                max_preds = output.argmax(dim=1, keepdim=True)  # get the index of the max probability (multi-class)
+                # output_sigmoided = F.sigmoid(output.permute(0, 2, 3, 4, 1))
+                # output_sigmoided = (output_sigmoided > 0.5).float()
 
             ############ Evaluation metric calculation ########
             total_loss += loss.item()
 
-            # Metrics calculation (macro) over the whole set
-            confusioner = torchmetrics.ConfusionMatrix(num_classes=label.shape[1], multilabel=True).to(self.device)
-            confusion = confusioner(output_sigmoided.flatten(start_dim=0, end_dim=3), label.permute(0, 2, 3, 4, 1).flatten(start_dim=0, end_dim=3))
+            accuracy_calculator = torchmetrics.Accuracy(num_classes=output.shape[1]).to(self.device)
+            total_accuracy += accuracy_calculator(max_preds.flatten(), label.flatten()).item()
 
-            F1_disease = []
-            accuracy_disease = []
-            specifity_disease = []
-            sensitivity_disease = []
-            precision_disease = []
+            f1_scorer = torchmetrics.F1(num_classes=output.shape[1], average='none').to(self.device)
+            total_f1_score += f1_scorer(max_preds.flatten(), label.flatten())[1:]
 
-            for idx, disease in enumerate(confusion):
-                TN = disease[0, 0]
-                FP = disease[0, 1]
-                FN = disease[1, 0]
-                TP = disease[1, 1]
-                F1_disease.append(2 * TP / (2 * TP + FN + FP + epsilon))
-                accuracy_disease.append((TP + TN) / (TP + TN + FP + FN + epsilon))
-                specifity_disease.append(TN / (TN + FP + epsilon))
-                sensitivity_disease.append(TP / (TP + FN + epsilon))
-                precision_disease.append(TP / (TP + FP + epsilon))
+            specifity_scorer = torchmetrics.Specificity(num_classes=output.shape[1], average='none').to(self.device)
+            total_specifity_score += specifity_scorer(max_preds.flatten(), label.flatten())[1:]
 
-            # Macro averaging
-            total_f1_score.append(torch.stack(F1_disease))
-            total_accuracy.append(torch.stack(accuracy_disease))
-            total_specifity_score.append(torch.stack(specifity_disease))
-            total_sensitivity_score.append(torch.stack(sensitivity_disease))
-            total_precision_score.append(torch.stack(precision_disease))
+            sensitivity_scorer = torchmetrics.Recall(num_classes=output.shape[1], average='none').to(self.device)
+            total_sensitivity_score += sensitivity_scorer(max_preds.flatten(), label.flatten())[1:]
+
+            precision_scorer = torchmetrics.Precision(num_classes=output.shape[1], average='none').to(self.device)
+            total_precision_score += precision_scorer(max_preds.flatten(), label.flatten())[1:]
 
         average_loss = total_loss / len(valid_loader)
-        average_f1_score = torch.stack(total_f1_score).mean(0)
-        average_accuracy = torch.stack(total_accuracy).mean(0)
-        average_specifity = torch.stack(total_specifity_score).mean(0)
-        average_sensitivity = torch.stack(total_sensitivity_score).mean(0)
-        average_precision = torch.stack(total_precision_score).mean(0)
+        average_accuracy = total_accuracy / len(valid_loader)
+        average_f1_score = total_f1_score / len(valid_loader)
+        average_specifity = total_specifity_score / len(valid_loader)
+        average_sensitivity = total_sensitivity_score / len(valid_loader)
+        average_precision = total_precision_score / len(valid_loader)
 
         return average_loss, average_f1_score, average_accuracy, average_specifity, average_sensitivity, average_precision
-
 
 
     def savings_prints(self, iteration_hours, iteration_mins, iteration_secs, total_hours,
@@ -709,7 +704,7 @@ class Training:
         print(f'\n\tTrain loss: {train_loss:.4f}')
 
         if valid_loss:
-            print(f'\t Val. loss: {valid_loss:.4f} | Average Dice score (whole tumor): {valid_F1.mean().item() * 100:.2f}% | accuracy: {valid_accuracy.mean().item() * 100:.2f}%'
+            print(f'\t Val. loss: {valid_loss:.4f} | Average Dice score (whole tumor): {valid_F1.mean().item() * 100:.2f}% | accuracy: {valid_accuracy * 100:.2f}%'
             f' | specifity WT: {valid_specifity.mean().item() * 100:.2f}%'
             f' | recall (sensitivity) WT: {valid_sensitivity.mean().item() * 100:.2f}% | precision WT: {valid_precision.mean().item() * 100:.2f}%\n')
 
@@ -728,7 +723,7 @@ class Training:
                   f' | total time - copy time: {noncopy_hours}h {noncopy_mins}m {noncopy_secs:.2f}s' \
                   f' | total time - copy time - overhead time: {netto_hours}h {netto_mins}m {netto_secs:.2f}s' \
                   f'\n\n\tTrain loss: {train_loss:.4f} | ' \
-                   f'Val. loss: {valid_loss:.4f} | Average Dice score (whole tumor): {valid_F1.mean().item() * 100:.2f}% | accuracy: {valid_accuracy.mean().item() * 100:.2f}% ' \
+                   f'Val. loss: {valid_loss:.4f} | Average Dice score (whole tumor): {valid_F1.mean().item() * 100:.2f}% | accuracy: {valid_accuracy * 100:.2f}% ' \
                    f' | specifity WT: {valid_specifity.mean().item() * 100:.2f}%' \
                    f' | recall (sensitivity) WT: {valid_sensitivity.mean().item() * 100:.2f}% | precision WT: {valid_precision.mean().item() * 100:.2f}%\n\n' \
                    f'  Dice label 1 (necrotic tumor core): {valid_F1[0].item() * 100:.2f}% | ' \
