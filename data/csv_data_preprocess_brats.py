@@ -392,7 +392,10 @@ class cropper():
         self.file_base_dir = self.params['file_path']
         org_df = pd.read_csv(os.path.join(self.file_base_dir, "brats20_master_list.csv"), sep=',')
         # self.df = org_df[org_df['pat_num'] > 72]
-        self.df = org_df[org_df['soroosh_split'] == 'test']
+        self.df = org_df[org_df['soroosh_split'] == 'train']
+        valid_df = org_df[org_df['soroosh_split'] == 'valid']
+        self.df = self.df.append(valid_df)
+        self.df = self.df.sort_values(['BraTS_2020_subject_ID'])
 
 
 
@@ -663,6 +666,107 @@ class cropper():
         final_df.to_csv('/home/soroosh/Documents/datasets/BraTS20/new_BraTS20/officialvalidation_padding_after_cropping.csv', sep=',', index=False)
 
 
+    def perform_cropping_new_data_fullsize_training(self):
+
+        # initializing the df for padding later to the original size
+        final_df = pd.DataFrame(columns=['pat', 'left_h_first_dim', 'right_h_first_dim', 'left_w_second_dim', 'right_w_second_dim', 'left_d_third_dim', 'right_d_third_dim'])
+
+        for index, row in tqdm(self.df.iterrows()):
+            path_pat = os.path.join(self.file_base_dir, str(row['BraTS_2020_subject_ID']))
+            path_file = os.path.join(path_pat, str(row['BraTS_2020_subject_ID']) + '_t1.nii.gz')
+            x_input_nifti = nib.load(path_file)
+            data = x_input_nifti.get_fdata() # (h, w, d)
+            data = np.expand_dims(data, 0) # (1, h, w, d)
+
+            nonzero_mask = self.create_nonzero_mask(data)
+            bbox = self.get_bbox_from_mask(nonzero_mask, 0)
+            final_df = final_df.append(pd.DataFrame([[str(row['BraTS_2020_subject_ID']), bbox[0][0], data.shape[1] - bbox[0][1],
+                                                      bbox[1][0], data.shape[2] - bbox[1][1], bbox[2][0], data.shape[3] - bbox[2][1]]],
+                                                    columns=['pat', 'left_h_first_dim', 'right_h_first_dim', 'left_w_second_dim',
+                                                             'right_w_second_dim', 'left_d_third_dim', 'right_d_third_dim']))
+            cropped_data = []
+            for c in range(data.shape[0]):
+                cropped = self.crop_to_bbox(data[c], bbox)
+                cropped_data.append(cropped[None])
+            data = np.vstack(cropped_data) # (1, h, w, d)
+            x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
+            # x_input_nifti.affine[0, 3] -= bbox[0][0] - 1
+            # x_input_nifti.affine[1, 3] -= bbox[1][0] - 1
+            # x_input_nifti.affine[2, 3] -= bbox[2][0] - 1
+            resultt = nib.Nifti1Image(data[0], affine=x_input_nifti.affine, header=x_input_nifti.header)
+            path_file_output = path_file.replace('/original/', '/cropped/fullsize_label/')
+            os.makedirs(os.path.dirname(path_file.replace('/original/', '/cropped/fullsize_label/')), exist_ok=True)
+            nib.save(resultt, path_file_output) # (h, w, d)
+
+            # mod2
+            path_file = os.path.join(path_pat, str(row['BraTS_2020_subject_ID']) + '_t1ce.nii.gz')
+            x_input_nifti = nib.load(path_file)
+            data = x_input_nifti.get_fdata()
+            data = np.expand_dims(data, 0)
+            cropped_data = []
+            for c in range(data.shape[0]):
+                cropped = self.crop_to_bbox(data[c], bbox)
+                cropped_data.append(cropped[None])
+            data = np.vstack(cropped_data)
+            x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
+            # x_input_nifti.affine[0, 3] -= bbox[0][0] - 1
+            # x_input_nifti.affine[1, 3] -= bbox[1][0] - 1
+            # x_input_nifti.affine[2, 3] -= bbox[2][0] - 1
+            resultt = nib.Nifti1Image(data[0], affine=x_input_nifti.affine, header=x_input_nifti.header)
+            path_file_output = path_file.replace('/original/', '/cropped/fullsize_label/')
+            os.makedirs(os.path.dirname(path_file.replace('/original/', '/cropped/fullsize_label/')), exist_ok=True)
+            nib.save(resultt, path_file_output) # (h, w, d)
+
+            # mod3
+            path_file = os.path.join(path_pat, str(row['BraTS_2020_subject_ID']) + '_t2.nii.gz')
+            x_input_nifti = nib.load(path_file)
+            data = x_input_nifti.get_fdata()
+            data = np.expand_dims(data, 0)
+            cropped_data = []
+            for c in range(data.shape[0]):
+                cropped = self.crop_to_bbox(data[c], bbox)
+                cropped_data.append(cropped[None])
+            data = np.vstack(cropped_data)
+            x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
+            # x_input_nifti.affine[0, 3] -= bbox[0][0] - 1
+            # x_input_nifti.affine[1, 3] -= bbox[1][0] - 1
+            # x_input_nifti.affine[2, 3] -= bbox[2][0] - 1
+            resultt = nib.Nifti1Image(data[0], affine=x_input_nifti.affine, header=x_input_nifti.header)
+            path_file_output = path_file.replace('/original/', '/cropped/fullsize_label/')
+            os.makedirs(os.path.dirname(path_file.replace('/original/', '/cropped/fullsize_label/')), exist_ok=True)
+            nib.save(resultt, path_file_output) # (h, w, d)
+
+            # mod4
+            path_file = os.path.join(path_pat, str(row['BraTS_2020_subject_ID']) + '_flair.nii.gz')
+            x_input_nifti = nib.load(path_file)
+            data = x_input_nifti.get_fdata()
+            data = np.expand_dims(data, 0)
+            cropped_data = []
+            for c in range(data.shape[0]):
+                cropped = self.crop_to_bbox(data[c], bbox)
+                cropped_data.append(cropped[None])
+            data = np.vstack(cropped_data)
+            x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
+            # x_input_nifti.affine[0, 3] -= bbox[0][0] - 1
+            # x_input_nifti.affine[1, 3] -= bbox[1][0] - 1
+            # x_input_nifti.affine[2, 3] -= bbox[2][0] - 1
+            resultt = nib.Nifti1Image(data[0], affine=x_input_nifti.affine, header=x_input_nifti.header)
+            path_file_output = path_file.replace('/original/', '/cropped/fullsize_label/')
+            os.makedirs(os.path.dirname(path_file.replace('/original/', '/cropped/fullsize_label/')), exist_ok=True)
+            nib.save(resultt, path_file_output) # (h, w, d)
+
+            # full size seg-label
+            path_file = os.path.join(path_pat, str(row['BraTS_2020_subject_ID']) + '_seg.nii.gz')
+            x_input_nifti = nib.load(path_file)
+            data = x_input_nifti.get_fdata() # (h, w, d)
+            resultt = nib.Nifti1Image(data.astype(np.uint8), affine=x_input_nifti.affine, header=x_input_nifti.header)
+            path_file_output = path_file.replace('/original/', '/cropped/fullsize_label/')
+            os.makedirs(os.path.dirname(path_file.replace('/original/', '/cropped/fullsize_label/')), exist_ok=True)
+            nib.save(resultt, path_file_output) # (h, w, d)
+
+
+        final_df.to_csv('/home/soroosh/Documents/datasets/BraTS20/new_BraTS20/officialtraining_padding_after_cropping.csv', sep=',', index=False)
+
 
 
 if __name__ == '__main__':
@@ -670,4 +774,4 @@ if __name__ == '__main__':
     # handler.csv_divider_train_valid_test(num_clients=5)
     # handler.csv_divider_train_valid(num_clients=5)
     crroppper = cropper()
-    crroppper = crroppper.perform_cropping_new_data()
+    crroppper = crroppper.perform_cropping_new_data_fullsize_training()

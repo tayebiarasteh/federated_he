@@ -162,13 +162,13 @@ def random_augment(image, label, confg_path='/home/soroosh/Documents/Repositorie
             image_file, label_file = random_spatial_brats_augmentation(image_file, label_file, confg_path)
 
             image_file = image_file.float()
-            label_file = label_file.int()
+            label_file = label_file.long()
 
         if random() < params['augmentation']['general_intensity_probability']:
             image_file = random_intensity_brats_augmentation(image_file, confg_path)
 
             image_file = image_file.float()
-            label_file = label_file.int()
+            label_file = label_file.long()
 
         transformed_image_list.append(image_file)
         transformed_label_list.append(label_file)
@@ -228,7 +228,7 @@ def patch_cropper(image, label, confg_path='/home/soroosh/Documents/Repositories
         label_file = label_file[:, dd:dd + patch_d, hh:hh + patch_h, ww:ww + patch_w]
 
         image_file = image_file.float()
-        label_file = label_file.int()
+        label_file = label_file.long()
         image_list.append(image_file)
         label_list.append(label_file)
 

@@ -38,11 +38,12 @@ tb_logs_path: tensor_board_logs/
 stat_log_path: stat_logs
 checkpoint_name: checkpoint.tar
 trained_model_name: trained_model.pth
+class_weights: [0.00312639, 0.60484207, 0.05533713, 0.3366944] # for BraTS20
 
 
 # changeable items:
-file_path: /home/soroosh/Documents/datasets/BraTS20/new_BraTS20/cropped/
+file_path: /home/soroosh/Documents/datasets/BraTS20/new_BraTS20/original/
 target_dir: /home/soroosh/Documents/Repositories_target_files/federated_he/
 network_save_freq: 10 # based on the batch size, shows the number of epochs done; every half an hour is good
 display_stats_freq: 1 # valid freq is equal to this
-num_epochs: 200
+num_epochs: 150
