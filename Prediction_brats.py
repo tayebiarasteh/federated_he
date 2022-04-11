@@ -245,7 +245,6 @@ class Prediction:
 
 
 
-
     def predict_3D(self, image):
         """Prediction of one signle image
 
@@ -260,7 +259,6 @@ class Prediction:
         with torch.no_grad():
             output = self.model(image)
             output_sigmoided = F.sigmoid(output)
-            output_sigmoided = (output_sigmoided > 0.5).float()
 
         return output_sigmoided
 
@@ -325,10 +323,8 @@ class Prediction:
             output = output.to(self.device)
 
             output_sigmoided = F.sigmoid(output)
-            output_sigmoided = (output_sigmoided > 0.5).float()
 
         return output_sigmoided
-
 
 
     def tta_performer(self, image, transform_type):

@@ -392,10 +392,10 @@ class cropper():
         self.file_base_dir = self.params['file_path']
         org_df = pd.read_csv(os.path.join(self.file_base_dir, "brats20_master_list.csv"), sep=',')
         # self.df = org_df[org_df['pat_num'] > 72]
-        self.df = org_df[org_df['soroosh_split'] == 'train']
-        valid_df = org_df[org_df['soroosh_split'] == 'valid']
-        self.df = self.df.append(valid_df)
-        self.df = self.df.sort_values(['BraTS_2020_subject_ID'])
+        self.df = org_df[org_df['soroosh_split'] == 'test']
+        # valid_df = org_df[org_df['soroosh_split'] == 'valid']
+        # self.df = self.df.append(valid_df)
+        # self.df = self.df.sort_values(['BraTS_2020_subject_ID'])
 
 
 
@@ -577,7 +577,7 @@ class cropper():
                 cropped = self.crop_to_bbox(data[c], bbox)
                 cropped_data.append(cropped[None])
             data = np.vstack(cropped_data) # (1, h, w, d)
-            x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
+            # x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
             # x_input_nifti.affine[0, 3] -= bbox[0][0] - 1
             # x_input_nifti.affine[1, 3] -= bbox[1][0] - 1
             # x_input_nifti.affine[2, 3] -= bbox[2][0] - 1
@@ -597,7 +597,7 @@ class cropper():
                 cropped = self.crop_to_bbox(data[c], bbox)
                 cropped_data.append(cropped[None])
             data = np.vstack(cropped_data)
-            x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
+            # x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
             # x_input_nifti.affine[0, 3] -= bbox[0][0] - 1
             # x_input_nifti.affine[1, 3] -= bbox[1][0] - 1
             # x_input_nifti.affine[2, 3] -= bbox[2][0] - 1
@@ -616,7 +616,7 @@ class cropper():
                 cropped = self.crop_to_bbox(data[c], bbox)
                 cropped_data.append(cropped[None])
             data = np.vstack(cropped_data)
-            x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
+            # x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
             # x_input_nifti.affine[0, 3] -= bbox[0][0] - 1
             # x_input_nifti.affine[1, 3] -= bbox[1][0] - 1
             # x_input_nifti.affine[2, 3] -= bbox[2][0] - 1
@@ -635,7 +635,7 @@ class cropper():
                 cropped = self.crop_to_bbox(data[c], bbox)
                 cropped_data.append(cropped[None])
             data = np.vstack(cropped_data)
-            x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
+            # x_input_nifti.header['dim'][1:4] = np.array(data[0].shape)
             # x_input_nifti.affine[0, 3] -= bbox[0][0] - 1
             # x_input_nifti.affine[1, 3] -= bbox[1][0] - 1
             # x_input_nifti.affine[2, 3] -= bbox[2][0] - 1
@@ -774,4 +774,4 @@ if __name__ == '__main__':
     # handler.csv_divider_train_valid_test(num_clients=5)
     # handler.csv_divider_train_valid(num_clients=5)
     crroppper = cropper()
-    crroppper = crroppper.perform_cropping_new_data_fullsize_training()
+    crroppper = crroppper.perform_cropping_new_data()
