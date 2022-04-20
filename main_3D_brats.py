@@ -522,9 +522,9 @@ def main_predict_3D_multilabelbased_multiclass_output(global_config_path="/home/
 
 
 def main_predict_3D_crossvalid_multilabelbased_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-                    experiment_name1='name', experiment_name2='name', experiment_name3='name', modality=2, tta=False):
+                    experiment_name1='name', experiment_name2='name', experiment_name3='name', experiment_name4='name', experiment_name5='name', modality=2, tta=False):
     """Prediction without evaluation for all the images.
-    3-fold cross validation
+    5-fold cross validation
 
     Parameters
     ----------
@@ -540,15 +540,29 @@ def main_predict_3D_crossvalid_multilabelbased_multiclass_output(global_config_p
     predictor1 = Prediction(cfg_path)
     predictor1.setup_model(model=model)
 
-    params = open_experiment(experiment_name2, global_config_path)
-    cfg_path = params['cfg_path']
-    predictor2 = Prediction(cfg_path)
-    predictor2.setup_model(model=model)
+    params2 = open_experiment(experiment_name2, global_config_path)
+    cfg_path2 = params2['cfg_path']
+    predictor2 = Prediction(cfg_path2)
+    model2 = UNet3D(n_out_classes=3, firstdim=48)
+    predictor2.setup_model(model=model2)
 
-    params = open_experiment(experiment_name3, global_config_path)
-    cfg_path = params['cfg_path']
-    predictor3 = Prediction(cfg_path)
-    predictor3.setup_model(model=model)
+    params3 = open_experiment(experiment_name3, global_config_path)
+    cfg_path3 = params3['cfg_path']
+    predictor3 = Prediction(cfg_path3)
+    model3 = UNet3D(n_out_classes=3, firstdim=48)
+    predictor3.setup_model(model=model3)
+
+    params4 = open_experiment(experiment_name4, global_config_path)
+    cfg_path4 = params4['cfg_path']
+    predictor4 = Prediction(cfg_path4)
+    model4 = UNet3D(n_out_classes=3, firstdim=48)
+    predictor4.setup_model(model=model4)
+
+    params5 = open_experiment(experiment_name5, global_config_path)
+    cfg_path5 = params5['cfg_path']
+    predictor5 = Prediction(cfg_path5)
+    model5 = UNet3D(n_out_classes=3, firstdim=48)
+    predictor5.setup_model(model=model5)
 
     # Generate test set
     test_dataset = data_loader_without_label_3D_multiclass(cfg_path=cfg_path, mode='test', image_downsample=image_downsample)
@@ -563,12 +577,16 @@ def main_predict_3D_crossvalid_multilabelbased_multiclass_output(global_config_p
             output_sigmoided1 = predictor1.predict_3D_tta(x_input) # (d,h,w)
             output_sigmoided2 = predictor2.predict_3D_tta(x_input) # (d,h,w)
             output_sigmoided3 = predictor3.predict_3D_tta(x_input) # (d,h,w)
-            output_sigmoided = (output_sigmoided1 + output_sigmoided2 + output_sigmoided3) / 3
+            output_sigmoided4 = predictor4.predict_3D_tta(x_input) # (d,h,w)
+            output_sigmoided5 = predictor5.predict_3D_tta(x_input) # (d,h,w)
+            output_sigmoided = (output_sigmoided1 + output_sigmoided2 + output_sigmoided3 + output_sigmoided4 + output_sigmoided5) / 5
         else:
             output_sigmoided1 = predictor1.predict_3D(x_input) # (d,h,w)
             output_sigmoided2 = predictor2.predict_3D(x_input) # (d,h,w)
             output_sigmoided3 = predictor3.predict_3D(x_input) # (d,h,w)
-            output_sigmoided = (output_sigmoided1 + output_sigmoided2 + output_sigmoided3) / 3
+            output_sigmoided4 = predictor4.predict_3D(x_input) # (d,h,w)
+            output_sigmoided5 = predictor5.predict_3D(x_input) # (d,h,w)
+            output_sigmoided = (output_sigmoided1 + output_sigmoided2 + output_sigmoided3 + output_sigmoided4 + output_sigmoided5) / 5
 
         output_sigmoided_classified = (output_sigmoided > 0.5).float()
 
@@ -627,7 +645,7 @@ def main_predict_3D_crossvalid_multilabelbased_multiclass_output(global_config_p
         label = label.astype(np.uint8)
 
         segmentation = nib.Nifti1Image(label, affine=x_input_nifti.affine, header=x_input_nifti.header)
-        nib.save(segmentation, os.path.join(params['target_dir'], params['output_data_path'], os.path.basename(path_pat) + '.nii.gz'))
+        nib.save(segmentation, os.path.join(params5['target_dir'], params5['output_data_path'], 'ensembled', os.path.basename(path_pat) + '.nii.gz'))
         # nib.save(segmentation, os.path.join(params['target_dir'], params['output_data_path'], os.path.basename(path_pat) + '-label.nii.gz'))
 
 
@@ -646,7 +664,9 @@ if __name__ == '__main__':
     main_predict_3D_multilabelbased_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
                 experiment_name='newdata_HE_prec16_federated_5client_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128', tta=False)
     #             experiment_name='newdata_HE_prec13_federated_5client_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128', tta=False)
-    # main_predict_3D_crossvalid_multilabelbased_multiclass_output(global_config_path="/home/arasteh/Documents/Repositories/federated_he/config/config.yaml",
-    #                                                              experiment_name1='newdata_HE_prec16_federated_5client_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128',
-    #                                                              experiment_name2='fold2_newdata_HE_prec16_federated_5client_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128',
-    #                                                              experiment_name3='fold3_newdata_HE_prec16_federated_5client_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128', tta=False)
+    # main_predict_3D_crossvalid_multilabelbased_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+    #                                                              experiment_name1='newdata_central_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128',
+    #                                                              experiment_name2='fold2_newdata_central_batch1_unet64_flip_AWGN_gamma_lr1e4_patch128_128_128',
+    #                                                              experiment_name3='fold3_newdata_central_batch1_unet64_flip_AWGN_gamma_lr1e4_patch128_128_128',
+    #                                                              experiment_name4='fold4_newdata_central_batch1_unet64_flip_AWGN_gamma_lr1e4_patch128_128_128',
+    #                                                              experiment_name5='fold5_newdata_central_batch1_unet64_flip_AWGN_gamma_lr1e4_patch128_128_128', tta=False)
