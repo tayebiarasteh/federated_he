@@ -655,14 +655,14 @@ if __name__ == '__main__':
     # delete_experiment(experiment_name='tempppnohe', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
     # main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
     #               valid=True, resume=False, augment=True, experiment_name='tempppnohe')
-    # main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #               valid=True, resume=False, augment=True, experiment_name='tempppnohe', HE=True, num_clients=2, precision_fractional=16)
+    main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+                  valid=True, resume=False, augment=True, experiment_name='tempppnohe', HE=True, num_clients=2, precision_fractional=16)
     # main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
     #             experiment_name='newdata_HE_prec16_federated_5client_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128', tta=False)
     # main_evaluate_3D_multilabelbased_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
     #             experiment_name='newdata_HE_prec16_federated_5client_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128', tta=False)
-    main_predict_3D_multilabelbased_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-                experiment_name='newdata_HE_prec16_federated_5client_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128', tta=False)
+    # main_predict_3D_multilabelbased_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+    #             experiment_name='newdata_HE_prec16_federated_5client_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128', tta=False)
     #             experiment_name='newdata_HE_prec13_federated_5client_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128', tta=False)
     # main_predict_3D_crossvalid_multilabelbased_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
     #                                                              experiment_name1='newdata_central_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128',

@@ -3,3 +3,5 @@
 /.idea/
 /config/__pycache__/
 /models/__pycache__/
+/gradient_inversion/.idea/
+/gradient_inversion/results/

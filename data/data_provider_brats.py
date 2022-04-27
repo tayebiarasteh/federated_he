@@ -59,7 +59,8 @@ class data_loader_3D(Dataset):
         self.modality = int(modality)
         self.multimodal = multimodal
         self.image_downsample = image_downsample
-        org_df = pd.read_csv(os.path.join(self.file_base_dir, "brats20_master_list.csv"), sep=',')
+        # org_df = pd.read_csv(os.path.join(self.file_base_dir, "brats20_master_list.csv"), sep=',')
+        org_df = pd.read_csv(os.path.join(self.file_base_dir, "fold3_soroosh_validadded_subset_brats20_master_list.csv"), sep=',')
         self.padding_df = pd.read_csv(os.path.join(self.file_base_dir, "officialvalidation_padding_after_cropping.csv"), sep=',')
 
         if mode=='train':
