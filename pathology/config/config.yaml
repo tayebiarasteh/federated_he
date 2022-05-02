@@ -1,0 +1,20 @@
+Network:
+  batch_size: 124
+  lr: 1e-4
+  weight_decay: 0
+  amsgrad: False
+network_output_path: network_data/
+output_data_path: output_data/
+tb_logs_path: tensor_board_logs/
+stat_log_path: stat_logs
+checkpoint_name: checkpoint.tar
+trained_model_name: trained_model.pth
+
+
+# changeable items:
+file_path: /home/soroosh/Documents/datasets/Histopathology/soroosh_based/DACHS/
+test_file_path: /home/soroosh/Documents/datasets/Histopathology/soroosh_based/test/QUASAR_deployMSIH/feature_labels/
+target_dir: /home/soroosh/Documents/Repositories_target_files/federated_he/pathology/
+network_save_freq: 200 # based on the batch size, shows the number of epochs done; every half an hour is good
+display_stats_freq: 1 # valid freq is equal to this
+num_epochs: 50

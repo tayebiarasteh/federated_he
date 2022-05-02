@@ -83,7 +83,7 @@ def attack_main(num_classes=2, channel=1, num_iterations=3000, lr=1.0, downsampl
     use_cuda = torch.cuda.is_available()
     device = 'cuda' if use_cuda else 'cpu'
     tt = transforms.Compose([transforms.ToTensor()])
-    image = nib.load('/BraTS20_Training_002_t1ce.nii.gz').get_fdata()  # (h, w, d)
+    image = nib.load('/home/soroosh/Documents/datasets/BraTS20/new_BraTS20/cropped/BraTS20_Training_002/BraTS20_Training_002_t1ce.nii.gz').get_fdata()  # (h, w, d)
     image = image[:, :, 75]
 
     hdim = ceil(ceil(downsample_size / 2) / 2)
