@@ -27,14 +27,14 @@ epsilon = 1e-15
 
 
 
-def main_train_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml", valid=False,
+def main_train_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml", valid=False,
                   resume=False, experiment_name='name'):
     """Main function for training + validation for directly 3d-wise
 
         Parameters
         ----------
         global_config_path: str
-            always global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml"
+            always global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml"
 
         resume: bool
             if we are resuming training on a model
@@ -51,14 +51,14 @@ def main_train_pathology(global_config_path="/home/soroosh/Documents/Repositorie
 
     # Changeable network parameters
     model = mnistNet()
-    loss_function = CrossEntropyLoss # for multi label
+    loss_function = CrossEntropyLoss
     optimizer = torch.optim.Adam(model.parameters(), lr=float(params['Network']['lr']),
                                  weight_decay=float(params['Network']['weight_decay']), amsgrad=params['Network']['amsgrad'])
 
     trainset_class = data_loader_pathology(params["cfg_path"], mode='train')
     train_dataset = trainset_class.provide_data()
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=params['Network']['batch_size'],
-                                               pin_memory=True, drop_last=True, shuffle=True, num_workers=2)
+                                               pin_memory=True, drop_last=True, shuffle=True, num_workers=10)
 
     if valid:
         validset_class = data_loader_pathology(params["cfg_path"], mode='valid')
@@ -79,7 +79,7 @@ def main_train_pathology(global_config_path="/home/soroosh/Documents/Repositorie
 
 
 
-def main_test_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+def main_test_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
                     experiment_name='name'):
     """Evaluation (for local models) for all the images using the labels and calculating metrics.
     Parameters
@@ -98,18 +98,18 @@ def main_test_pathology(global_config_path="/home/soroosh/Documents/Repositories
     # Generate test set
     testset_class = data_loader_pathology(params["cfg_path"], mode='test')
     test_dataset = testset_class.provide_data()
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=params['Network']['batch_size'],
-                                               pin_memory=True, drop_last=True, shuffle=False, num_workers=2)
-    pdb.set_trace()
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=params['Network']['QUASAR_deployMSIH_batch_size'],
+                                               pin_memory=True, drop_last=False, shuffle=False, num_workers=10)
 
-    test_F1, test_accuracy, test_specifity, test_sensitivity, test_precision = predictor.evaluate(test_loader)
+    pred_array = predictor.predict(test_loader)
+    pdb.set_trace()
 
 
 
 
 if __name__ == '__main__':
-    delete_experiment(experiment_name='tempppnohe', global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml")
-    main_train_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
-                  resume=False, valid=True, experiment_name='tempppnohe')
-    # main_test_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
-    #               experiment_name='tempppnohe')
+    # delete_experiment(experiment_name='tempppnohe', global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml")
+    # main_train_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
+    #               resume=False, valid=False, experiment_name='tempppnohe')
+    main_test_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
+                  experiment_name='tempppnohe')

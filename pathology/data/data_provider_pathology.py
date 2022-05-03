@@ -9,7 +9,6 @@ https://github.com/tayebiarasteh/
 import os
 import torch
 import pdb
-import pandas as pd
 import numpy as np
 from torch.utils.data import Dataset
 
@@ -41,27 +40,28 @@ class data_loader_pathology():
 
         if mode=='train':
             self.directory_path = os.path.join(file_base_dir, 'train')
+            if not site == None:
+                self.directory_path = os.path.join(self.directory_path, site)
+            else:
+                self.directory_path = os.path.join(self.directory_path, 'central')
         elif mode == 'valid':
             self.directory_path = os.path.join(file_base_dir, 'valid')
         elif mode == 'test':
-            self.directory_path = self.params['test_file_path']
+            self.directory_path = os.path.join(file_base_dir, 'test', 'QUASAR_deployMSIH')
+
 
 
     def provide_data(self):
         """
         """
-        xTrain, yTrain = np.load(os.path.join(self.directory_path, 'features.npy')), np.load(os.path.join(self.directory_path, 'labels.npy'))
-        pdb.set_trace()
-
-        # xTrain, xTest = xTrain / 255.0, xTest / 255.0
+        xfile, yfile = np.load(os.path.join(self.directory_path, 'features.npy')), np.load(os.path.join(self.directory_path, 'labels.npy'))
 
         # transform numpy to torch.Tensor
-        xTrain, yTrain = map(torch.tensor, (xTrain.astype(np.float32), yTrain.astype(np.int_)))
+        xfile, yfile = map(torch.tensor, (xfile.astype(np.float32), yfile.astype(np.int_)))
 
         # convert torch.Tensor to a dataset
-        yTrain = yTrain.type(torch.LongTensor)
+        xfile = xfile.float()
 
-        # yTest = yTest.type(torch.LongTensor)
-        trainDs = torch.utils.data.TensorDataset(xTrain, yTrain)
+        output_dataset = torch.utils.data.TensorDataset(xfile, yfile)
 
-        return trainDs
+        return output_dataset

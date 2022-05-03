@@ -174,7 +174,7 @@ class Training:
 
 
     def training_init(self, train_loader, valid_loader=None):
-        """Training epoch
+        """
         """
         self.params = read_config(self.cfg_path)
         total_start_time = time.time()
@@ -182,39 +182,53 @@ class Training:
         for epoch in range(self.num_epochs - self.epoch):
             self.epoch += 1
 
+            start_time = time.time()
+
             train_loss = self.train_epoch(train_loader)
-            valid_loss = self.valid_epoch(valid_loader)
-            pdb.set_trace()
+
+            # Validation iteration & calculate metrics
+            if (self.epoch) % (self.params['display_stats_freq']) == 0:
+
+                # saving the model, checkpoint, TensorBoard, etc.
+                if not valid_loader == None:
+                    valid_loss, valid_accuracy = self.valid_epoch(valid_loader)
+                    end_time = time.time()
+                    total_time = end_time - total_start_time
+                    iteration_hours, iteration_mins, iteration_secs = self.time_duration(start_time, end_time)
+                    total_hours, total_mins, total_secs = self.time_duration(total_start_time, end_time)
+
+                    self.calculate_tb_stats(train_loss=train_loss, valid_loss=valid_loss, valid_accuracy=valid_accuracy)
+                    self.savings_prints(iteration_hours, iteration_mins, iteration_secs, total_hours,
+                                        total_mins, total_secs, train_loss, total_time, valid_loss=valid_loss, valid_accuracy=valid_accuracy)
+                else:
+                    end_time = time.time()
+                    total_time = end_time - total_start_time
+                    iteration_hours, iteration_mins, iteration_secs = self.time_duration(start_time, end_time)
+                    total_hours, total_mins, total_secs = self.time_duration(total_start_time, end_time)
+
+                    self.calculate_tb_stats(train_loss=train_loss)
+                    self.savings_prints(iteration_hours, iteration_mins, iteration_secs, total_hours,
+                                        total_mins, total_secs, train_loss, total_time)
+
 
 
     def train_epoch(self, train_loader):
         """Training epoch
         """
-
-        self.epoch += 1
-
-        # initializing the loss list
         total_loss = 0
 
         self.model.train()
-        for batchIdx, (data, target) in enumerate(train_loader):
+        for batchIdx, (image, label) in enumerate(train_loader):
 
             self.optimiser.zero_grad()
             with torch.set_grad_enabled(True):
-                data, target = data.to(self.device), target.to(self.device)
-                output = self.model(data)
+                image, label = image.to(self.device), label.to(self.device)
+                output = self.model(image)
 
-                loss = self.loss_function(output, target)
+                loss = self.loss_function(output, label)
                 loss.backward()
                 self.optimiser.step()
-
                 total_loss += loss.item()
-
-                trainPrint = True
-                if trainPrint and batchIdx % 100 == 0:
-                    print('Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                        self.epoch, batchIdx * len(data), len(train_loader.dataset),
-                               100. * batchIdx / len(train_loader), loss.item()))
 
         return total_loss / len(train_loader)
 
@@ -223,32 +237,33 @@ class Training:
     def valid_epoch(self, valid_loader):
         """valid epoch
         """
-        # initializing the loss list
         total_loss = 0
+        total_accuracy = 0
 
         self.model.eval()
-        for batchIdx, (data, target) in enumerate(valid_loader):
+        for batchIdx, (image, label) in enumerate(valid_loader):
 
             with torch.no_grad():
-                data, target = data.to(self.device), target.to(self.device)
-                output = self.model(data)
-                loss = self.loss_function(output, target)
+                image, label = image.to(self.device), label.to(self.device)
+                output = self.model(image)
+                loss = self.loss_function(output, label)
 
                 total_loss += loss.item()
 
-                trainPrint = True
-                if trainPrint and batchIdx % 100 == 0:
-                    print('Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                        self.epoch, batchIdx * len(data), len(valid_loader.dataset),
-                               100. * batchIdx / len(valid_loader), loss.item()))
+                output_sigmoided = F.sigmoid(output)
+                max_preds = output_sigmoided.argmax(dim=1)
 
-        return total_loss / len(valid_loader)
+                accuracy_calculator = torchmetrics.Accuracy().to(self.device)
+                total_accuracy += accuracy_calculator(max_preds, label).item()
+
+        final_accuracy = total_accuracy / len(valid_loader)
+
+        return total_loss / len(valid_loader), final_accuracy
 
 
 
     def savings_prints(self, iteration_hours, iteration_mins, iteration_secs, total_hours,
-                       total_mins, total_secs, train_loss, total_time, total_overhead_time=0, total_datacopy_time=0, valid_loss=None, valid_F1=None, valid_accuracy=None,
-                       valid_specifity=None, valid_sensitivity=None, valid_precision=None):
+                       total_mins, total_secs, train_loss, total_time, total_overhead_time=0, total_datacopy_time=0, valid_loss=None, valid_accuracy=None):
         """Saving the model weights, checkpoint, information,
         and training and validation loss and evaluation statistics.
 
@@ -277,15 +292,6 @@ class Training:
 
         valid_acc: float
             validation accuracy of the model
-
-        valid_sensitivity: float
-            validation sensitivity of the model
-
-        valid_specifity: float
-            validation specifity of the model
-
-        valid_loss: float
-            validation loss of the model
         """
 
         # Saves information about training to config file
@@ -331,16 +337,7 @@ class Training:
         print(f'\n\tTrain loss: {train_loss:.4f}')
 
         if valid_loss:
-            print(f'\t Val. loss: {valid_loss:.4f} | Average Dice score (whole tumor): {valid_F1.mean().item() * 100:.2f}% | accuracy: {valid_accuracy.mean().item() * 100:.2f}%'
-            f' | specifity WT: {valid_specifity.mean().item() * 100:.2f}%'
-            f' | recall (sensitivity) WT: {valid_sensitivity.mean().item() * 100:.2f}% | precision WT: {valid_precision.mean().item() * 100:.2f}%\n')
-
-            print('Individual Dice scores:')
-            print(f'Dice label 1 (necrotic tumor core): {valid_F1[0].item() * 100:.2f}%')
-            print(f'Dice label 2 (peritumoral edematous/invaded tissue): {valid_F1[1].item() * 100:.2f}%\n')
-            print(f'Dice label 4, i.e., enhancing tumor (ET): {valid_F1[2].item() * 100:.2f}%')
-            print(f'Dice average 1 and 4, i.e., tumor core (TC): {(valid_F1[0].item() + valid_F1[2].item()) / 2 * 100:.2f}%')
-            print(f'Dice average all 1, 2, 4, i.e., whole tumor (WT): {valid_F1.mean().item() * 100:.2f}%\n')
+            print(f'\t Val. loss: {valid_loss:.4f} | accuracy: {valid_accuracy * 100:.2f}%\n')
 
             # saving the training and validation stats
             msg = f'----------------------------------------------------------------------------------------\n' \
@@ -350,14 +347,7 @@ class Training:
                   f' | total time - copy time: {noncopy_hours}h {noncopy_mins}m {noncopy_secs:.2f}s' \
                   f' | total time - copy time - overhead time: {netto_hours}h {netto_mins}m {netto_secs:.2f}s' \
                   f'\n\n\tTrain loss: {train_loss:.4f} | ' \
-                   f'Val. loss: {valid_loss:.4f} | Average Dice score (whole tumor): {valid_F1.mean().item() * 100:.2f}% | accuracy: {valid_accuracy.mean().item() * 100:.2f}% ' \
-                   f' | specifity WT: {valid_specifity.mean().item() * 100:.2f}%' \
-                   f' | recall (sensitivity) WT: {valid_sensitivity.mean().item() * 100:.2f}% | precision WT: {valid_precision.mean().item() * 100:.2f}%\n\n' \
-                   f'  Dice label 1 (necrotic tumor core): {valid_F1[0].item() * 100:.2f}% | ' \
-                   f'Dice label 2 (peritumoral edematous/invaded tissue): {valid_F1[1].item() * 100:.2f}%\n\n' \
-                   f'- Dice label 4, i.e., enhancing tumor (ET): {valid_F1[2].item() * 100:.2f}%\n' \
-                   f'- Dice average 1 and 4, i.e., tumor core (TC): {(valid_F1[0].item() + valid_F1[2].item())/2 * 100:.2f}%\n' \
-                   f'- Dice average all 1, 2, 4, i.e., whole tumor (WT): {valid_F1.mean().item() * 100:.2f}%\n\n'
+                   f'Val. loss: {valid_loss:.4f} | accuracy: {valid_accuracy * 100:.2f}% \n\n'
         else:
             msg = f'----------------------------------------------------------------------------------------\n' \
                    f'epoch: {self.epoch} | epoch time: {iteration_hours}h {iteration_mins}m {iteration_secs:.2f}s' \
@@ -370,30 +360,11 @@ class Training:
 
 
 
-    def calculate_tb_stats(self, valid_loss=None, valid_F1=None, valid_accuracy=None, valid_specifity=None, valid_sensitivity=None, valid_precision=None):
+    def calculate_tb_stats(self, train_loss=None, valid_loss=None, valid_accuracy=None):
         """Adds the evaluation metrics and loss values to the tensorboard.
 
-        Parameters
-        ----------
-        valid_acc: float
-            validation accuracy of the model
-
-        valid_sensitivity: float
-            validation sensitivity of the model
-
-        valid_specifity: float
-            validation specifity of the model
-
-        valid_loss: float
-            validation loss of the model
         """
+        self.writer.add_scalar('train_loss', train_loss, self.epoch)
         if valid_loss is not None:
-            self.writer.add_scalar('Valid_loss', valid_loss, self.epoch)
-            self.writer.add_scalar('Valid_specifity_WT', valid_specifity.mean().item(), self.epoch)
-            self.writer.add_scalar('Valid_Dice_WT', valid_F1.mean().item(), self.epoch)
-            self.writer.add_scalar('Valid_Dice_TC', ((valid_F1[0] + valid_F1[2])/ 2).item(), self.epoch)
-            self.writer.add_scalar('Valid_Dice_label_4_ET', valid_F1[2].item(), self.epoch)
-            self.writer.add_scalar('Valid_Dice_label_1', valid_F1[0].item(), self.epoch)
-            self.writer.add_scalar('Valid_Dice_label_2', valid_F1[1].item(), self.epoch)
-            self.writer.add_scalar('Valid_precision_WT', valid_precision.mean().item(), self.epoch)
-            self.writer.add_scalar('Valid_recall_sensitivity_WT', valid_sensitivity.mean().item(), self.epoch)
+            self.writer.add_scalar('valid_loss', valid_loss, self.epoch)
+            self.writer.add_scalar('valid_accuracy', valid_accuracy, self.epoch)
