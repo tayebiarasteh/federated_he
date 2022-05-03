@@ -17,13 +17,11 @@ from config.serde import read_config
 
 
 
-
-
 class data_loader_pathology():
     """
     This is the pipeline based on Pytorch's Dataset and Dataloader
     """
-    def __init__(self, cfg_path, mode='train', site=None):
+    def __init__(self, cfg_path, mode='train', site=None, benchmark='QUASAR_deployMSIH'):
         """
         Parameters
         ----------
@@ -47,7 +45,7 @@ class data_loader_pathology():
         elif mode == 'valid':
             self.directory_path = os.path.join(file_base_dir, 'valid')
         elif mode == 'test':
-            self.directory_path = os.path.join(file_base_dir, 'test', 'QUASAR_deployMSIH')
+            self.directory_path = os.path.join(file_base_dir, 'test', benchmark)
 
 
 

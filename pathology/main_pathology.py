@@ -13,6 +13,10 @@ from torch.utils.data import Dataset
 from torch.nn import CrossEntropyLoss
 import numpy as np
 from tqdm import tqdm
+import pandas as pd
+import torch.nn.functional as F
+import torchmetrics
+from sklearn import metrics
 
 from config.serde import open_experiment, create_experiment, delete_experiment, write_config
 from Train_Valid_pathology import Training
@@ -80,7 +84,7 @@ def main_train_pathology(global_config_path="/home/soroosh/Documents/Repositorie
 
 
 def main_test_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
-                    experiment_name='name'):
+                    experiment_name='name', benchmark='YORKSHIR_deployMSIH'):
     """Evaluation (for local models) for all the images using the labels and calculating metrics.
     Parameters
     ----------
@@ -95,13 +99,42 @@ def main_test_pathology(global_config_path="/home/soroosh/Documents/Repositories
     predictor = Prediction(cfg_path)
     predictor.setup_model(model=model)
 
+    if benchmark == 'QUASAR_deployMSIH':
+        batch_size = 231
+    elif benchmark == 'YORKSHIR_deployMSIH':
+        batch_size = 39
+
     # Generate test set
-    testset_class = data_loader_pathology(params["cfg_path"], mode='test')
+    testset_class = data_loader_pathology(params["cfg_path"], mode='test', benchmark=benchmark)
     test_dataset = testset_class.provide_data()
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=params['Network']['QUASAR_deployMSIH_batch_size'],
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
                                                pin_memory=True, drop_last=False, shuffle=False, num_workers=10)
 
-    pred_array = predictor.predict(test_loader)
+    pred_array, target_array = predictor.predict(test_loader)
+
+    patient_wise_pred_list = []
+    patient_wise_label_list = []
+
+    split_df_path = os.path.join(params['file_path'], 'test', benchmark, 'org_split.csv')
+    df = pd.read_csv(split_df_path, sep=',')
+
+    for index, row in tqdm(df.iterrows()):
+        temp = pred_array[row['start_index']: row['end_index'] + 1]
+        temp_label = target_array[row['start_index']: row['end_index'] + 1]
+        patient_wise_pred_list.append(temp.mean(0))
+        patient_wise_label_list.append(temp_label[0])
+
+    patient_wise_pred_list = torch.stack(patient_wise_pred_list, 0)
+    targets = torch.stack(patient_wise_label_list, 0)
+    output_sigmoided = F.sigmoid(patient_wise_pred_list)
+    max_preds = output_sigmoided.argmax(dim=1)
+
+    accuracy_calculator = torchmetrics.Accuracy()
+    total_accuracy = accuracy_calculator(max_preds.cpu(), targets.cpu()).item()
+
+    fpr, tpr, thresholds = metrics.roc_curve(targets.cpu().numpy(), max_preds.cpu().numpy(), pos_label=1)
+    aucc = metrics.auc(fpr, tpr)
+
     pdb.set_trace()
 
 
@@ -112,4 +145,4 @@ if __name__ == '__main__':
     # main_train_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
     #               resume=False, valid=False, experiment_name='tempppnohe')
     main_test_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
-                  experiment_name='tempppnohe')
+                  experiment_name='tempppnohe', benchmark='YORKSHIR_deployMSIH')

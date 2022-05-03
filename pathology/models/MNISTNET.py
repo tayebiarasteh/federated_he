@@ -2,6 +2,8 @@
 Created on May 2, 2022.
 mnistNet.py
 
+@author: oliver
+
 https://github.com/tayebiarasteh/
 """
 

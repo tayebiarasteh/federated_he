@@ -1,6 +1,5 @@
 Network:
   batch_size: 124
-  QUASAR_deployMSIH_batch_size: 231
   lr: 1e-4
   weight_decay: 0
   amsgrad: False
