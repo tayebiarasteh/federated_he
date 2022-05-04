@@ -45,13 +45,14 @@ class Prediction:
             self.device = torch.device('cpu')
 
 
-    def setup_model(self, model, model_file_name=None):
+    def setup_model(self, model, model_file_name=None, epoch=1):
         if model_file_name == None:
             model_file_name = self.params['trained_model_name']
         self.model = model.to(self.device)
 
-        self.model.load_state_dict(torch.load(os.path.join(self.params['target_dir'], self.params['network_output_path'], model_file_name)))
-        # self.model.load_state_dict(torch.load(os.path.join(self.params['target_dir'], self.params['network_output_path']) + "epoch24_" + model_file_name))
+        # self.model.load_state_dict(torch.load(os.path.join(self.params['target_dir'], self.params['network_output_path'], model_file_name)))
+        # self.model.load_state_dict(torch.load(os.path.join(self.params['target_dir'], self.params['network_output_path']) + "epoch25_" + model_file_name))
+        self.model.load_state_dict(torch.load(os.path.join(self.params['target_dir'], self.params['network_output_path']) + "epoch" + str(epoch) + "_" + model_file_name))
 
 
 
@@ -63,7 +64,7 @@ class Prediction:
         pred_array = []
         target_array = []
 
-        for idx, (image, label) in enumerate(tqdm(test_loader)):
+        for idx, (image, label) in enumerate(test_loader):
 
             with torch.no_grad():
                 image, label = image.to(self.device), label.to(self.device)

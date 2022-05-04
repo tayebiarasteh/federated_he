@@ -21,7 +21,7 @@ class data_loader_pathology():
     """
     This is the pipeline based on Pytorch's Dataset and Dataloader
     """
-    def __init__(self, cfg_path, mode='train', site=None, benchmark='QUASAR_deployMSIH'):
+    def __init__(self, cfg_path, mode='train', site=None, benchmark='QUASAR_deployMSIH', fold=1):
         """
         Parameters
         ----------
@@ -35,16 +35,18 @@ class data_loader_pathology():
         self.cfg_path = cfg_path
         self.params = read_config(cfg_path)
         file_base_dir = self.params['file_path']
+        self.fold = fold
+        self.mode = mode
 
-        if mode=='train':
+        if self.mode =='train':
             self.directory_path = os.path.join(file_base_dir, 'train')
             if not site == None:
                 self.directory_path = os.path.join(self.directory_path, site)
             else:
                 self.directory_path = os.path.join(self.directory_path, 'central')
-        elif mode == 'valid':
+        elif self.mode == 'valid':
             self.directory_path = os.path.join(file_base_dir, 'valid')
-        elif mode == 'test':
+        elif self.mode == 'test':
             self.directory_path = os.path.join(file_base_dir, 'test', benchmark)
 
 
@@ -52,7 +54,10 @@ class data_loader_pathology():
     def provide_data(self):
         """
         """
-        xfile, yfile = np.load(os.path.join(self.directory_path, 'features.npy')), np.load(os.path.join(self.directory_path, 'labels.npy'))
+        if self.mode == 'test':
+            xfile, yfile = np.load(os.path.join(self.directory_path, 'features.npy')), np.load(os.path.join(self.directory_path, 'labels.npy'))
+        else:
+            xfile, yfile = np.load(os.path.join(self.directory_path, 'features_fold' + str(self.fold) + '.npy')), np.load(os.path.join(self.directory_path, 'labels_fold' + str(self.fold) + '.npy'))
 
         # transform numpy to torch.Tensor
         xfile, yfile = map(torch.tensor, (xfile.astype(np.float32), yfile.astype(np.int_)))

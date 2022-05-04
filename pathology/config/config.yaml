@@ -1,6 +1,6 @@
 Network:
   batch_size: 124
-  lr: 1e-4
+  lr: 4e-5
   weight_decay: 0
   amsgrad: False
 network_output_path: network_data/
@@ -14,6 +14,6 @@ trained_model_name: trained_model.pth
 # changeable items:
 file_path: /home/soroosh/Documents/datasets/Histopathology/soroosh_based/
 target_dir: /home/soroosh/Documents/Repositories_target_files/federated_he/pathology/
-network_save_freq: 25 # based on the batch size, shows the number of epochs done; every half an hour is good
+network_save_freq: 1 # shows the number of epochs done
 display_stats_freq: 1 # valid freq is equal to this [MUST be 1 for this project]
-num_epochs: 50
+num_epochs: 60
