@@ -16,4 +16,4 @@ file_path: /home/soroosh/Documents/datasets/Histopathology/soroosh_based/
 target_dir: /home/soroosh/Documents/Repositories_target_files/federated_he/pathology/
 network_save_freq: 1 # shows the number of epochs done
 display_stats_freq: 1 # valid freq is equal to this [MUST be 1 for this project]
-num_epochs: 60
+num_epochs: 100

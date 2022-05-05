@@ -17,6 +17,7 @@ import pandas as pd
 import torch.nn.functional as F
 import torchmetrics
 from sklearn import metrics
+from math import floor
 
 from config.serde import open_experiment, create_experiment, delete_experiment, write_config
 from Train_Valid_pathology import Training
@@ -80,6 +81,83 @@ def main_train_pathology(global_config_path="/home/soroosh/Documents/Repositorie
         trainer.setup_model(model=model, optimiser=optimizer,
                         loss_function=loss_function)
     trainer.training_init(train_loader=train_loader, valid_loader=valid_loader)
+
+
+
+def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml", valid=False,
+                  resume=False, experiment_name='name', HE=False, num_clients=3, precision_fractional=15, fold=1):
+    """
+
+        Parameters
+        ----------
+        global_config_path: str
+            always global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml"
+
+        valid: bool
+            if we want to do validation
+
+        resume: bool
+            if we are resuming training on a model
+
+        experiment_name: str
+            name of the experiment, in case of resuming training.
+            name of new experiment, in case of new training.
+
+        HE: bool
+            if we want to have homomorphic encryption
+
+        num_clients: int
+            number of training federated clients we want
+    """
+    if resume == True:
+        params = open_experiment(experiment_name, global_config_path)
+    else:
+        params = create_experiment(experiment_name, global_config_path)
+    cfg_path = params["cfg_path"]
+
+    # Changeable network parameters
+    model = mnistNet()
+    loss_function = CrossEntropyLoss
+    optimizer = torch.optim.Adam(model.parameters(), lr=float(params['Network']['lr']),
+                                 weight_decay=float(params['Network']['weight_decay']), amsgrad=params['Network']['amsgrad'])
+
+    num_workers = floor(16 / (num_clients + 1))
+    train_loader = []
+
+    # belfast
+    trainset_class = data_loader_pathology(params["cfg_path"], mode='train', site='belfast', fold=fold)
+    train_dataset = trainset_class.provide_data()
+    train_loader.append(torch.utils.data.DataLoader(train_dataset, batch_size=params['Network']['batch_size'],
+                                               pin_memory=True, drop_last=True, shuffle=True, num_workers=num_workers))
+    # DACHS
+    trainset_class = data_loader_pathology(params["cfg_path"], mode='train', site='DACHS', fold=fold)
+    train_dataset = trainset_class.provide_data()
+    train_loader.append(torch.utils.data.DataLoader(train_dataset, batch_size=params['Network']['batch_size'],
+                                               pin_memory=True, drop_last=True, shuffle=True, num_workers=num_workers))
+    # TCGA
+    trainset_class = data_loader_pathology(params["cfg_path"], mode='train', site='TCGA', fold=fold)
+    train_dataset = trainset_class.provide_data()
+    train_loader.append(torch.utils.data.DataLoader(train_dataset, batch_size=params['Network']['batch_size'],
+                                               pin_memory=True, drop_last=True, shuffle=True, num_workers=num_workers))
+
+    if valid:
+        validset_class = data_loader_pathology(params["cfg_path"], mode='valid', fold=fold)
+        valid_dataset = validset_class.provide_data()
+        valid_loader = torch.utils.data.DataLoader(valid_dataset, batch_size=params['Network']['batch_size'],
+                                                   pin_memory=True, drop_last=True, shuffle=False, num_workers=num_workers)
+    else:
+        valid_loader = None
+
+    trainer = Training(cfg_path, num_epochs=params['num_epochs'], resume=resume)
+
+    if resume == True:
+        trainer.load_checkpoint(model=model, optimiser=optimizer, loss_function=loss_function)
+    else:
+        trainer.setup_model(model=model, optimiser=optimizer, loss_function=loss_function)
+
+    trainer.training_setup_federated(train_loader=train_loader, valid_loader=valid_loader, HE=HE, precision_fractional=precision_fractional)
+
+
 
 
 
@@ -496,9 +574,12 @@ if __name__ == '__main__':
     delete_experiment(experiment_name='central_lr1e4_batch124_fold1', global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml")
     main_train_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
                   resume=False, valid=True, experiment_name='central_lr1e4_batch124_fold1', train_site='central', fold=1)
+    # main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
+    #               resume=False, valid=True, experiment_name='HE13_federated_lr4e5_batch124_fold1', HE=True, num_clients=3, precision_fractional=13, fold=1)
+
     # main_test_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
     #               experiment_name='belfast_lr1e4_batch124_fold1', benchmark='YORKSHIR_deployMSIH')
     # main_test_pathology_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
     #               experiment_name='central_lr1e4_batch124_fold1', benchmark='QUASAR_deployMSIH')
-    main_test_pathology__allbenchmarks_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
-                  experiment_name='central_lr1e4_batch124_fold1')
+    # main_test_pathology__allbenchmarks_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
+    #               experiment_name='HE13_federated_lr4e5_batch124_fold1')
