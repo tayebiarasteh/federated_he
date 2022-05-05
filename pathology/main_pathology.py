@@ -19,7 +19,7 @@ import torchmetrics
 from sklearn import metrics
 from math import floor
 
-from config.serde import open_experiment, create_experiment, delete_experiment, write_config
+from config.serde import open_experiment, create_experiment, delete_experiment
 from Train_Valid_pathology import Training
 from data.data_provider_pathology import data_loader_pathology
 from models.MNISTNET import mnistNet
@@ -283,14 +283,12 @@ def main_test_pathology_all_epochs(global_config_path="/home/soroosh/Documents/R
             best_acu_epoch = i + 1
 
         print(f'epoch {i + 1}:')
-        print(f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%')
-        print('-----------------------------------------\n')
+        print(f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%\n')
 
         # saving the training and validation stats
         msg = f'----------------------------------------------------------------------------------------\n' \
               f'epoch {i + 1}:' \
-              f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%' \
-              f'----------------------------------------------------------------------------------------\n'
+              f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%\n'
 
         with open(os.path.join(params['target_dir'], params['stat_log_path']) + '/test_results', 'a') as f:
             f.write(msg)
@@ -310,9 +308,9 @@ def main_test_pathology_all_epochs(global_config_path="/home/soroosh/Documents/R
         f.write(msg)
 
 
-def main_test_pathology__allbenchmarks_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
+def main_test_pathology_allbenchmarks_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
                     experiment_name='name'):
-    """Evaluation (for local models) for all the images using the labels and calculating metrics.
+    """
     Parameters
     ----------
     experiment_name: str
@@ -374,14 +372,12 @@ def main_test_pathology__allbenchmarks_all_epochs(global_config_path="/home/soro
             best_acu_epoch = i + 1
 
         print(f'epoch {i + 1}:')
-        print(f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%')
-        print('-----------------------------------------\n')
+        print(f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%\n')
 
         # saving the training and validation stats
         msg = f'----------------------------------------------------------------------------------------\n' \
               f'epoch {i + 1}:' \
-              f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%' \
-              f'----------------------------------------------------------------------------------------\n'
+              f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%\n'
 
         with open(os.path.join(params['target_dir'], params['stat_log_path']) + '/QUASAR_deployMSIH_test_results', 'a') as f:
             f.write(msg)
@@ -449,14 +445,12 @@ def main_test_pathology__allbenchmarks_all_epochs(global_config_path="/home/soro
             best_acu_epoch = i + 1
 
         print(f'epoch {i + 1}:')
-        print(f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%')
-        print('-----------------------------------------\n')
+        print(f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%\n')
 
         # saving the training and validation stats
         msg = f'----------------------------------------------------------------------------------------\n' \
               f'epoch {i + 1}:' \
-              f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%' \
-              f'----------------------------------------------------------------------------------------\n'
+              f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%\n'
 
         with open(os.path.join(params['target_dir'], params['stat_log_path']) + '/YORKSHIR_deployMSIH_test_results',
                   'a') as f:
@@ -537,14 +531,12 @@ def main_test_pathology__allbenchmarks_all_epochs(global_config_path="/home/soro
             best_acu_epoch = i + 1
 
         print(f'epoch {i + 1}:')
-        print(f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%')
-        print('-----------------------------------------\n')
+        print(f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%\n')
 
         # saving the training and validation stats
         msg = f'----------------------------------------------------------------------------------------\n' \
               f'epoch {i + 1}:' \
-              f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%' \
-              f'----------------------------------------------------------------------------------------\n'
+              f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%\n'
 
         with open(os.path.join(params['target_dir'], params['stat_log_path']) + '/QUASAR_YORKSHIR_test_results',
                   'a') as f:
@@ -567,13 +559,316 @@ def main_test_pathology__allbenchmarks_all_epochs(global_config_path="/home/soro
 
 
 
+def main_test_pathology_crossvalid_allbenchmarks_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
+                    experiment_name1='name', experiment_name2='name', experiment_name3='name', experiment_name4='name', experiment_name5='name', tta=False):
+
+    params1 = open_experiment(experiment_name1, global_config_path)
+    cfg_path1 = params1['cfg_path']
+    model1 = mnistNet()
+
+    # Initialize predictions
+    predictor1 = Prediction(cfg_path1)
+    predictor1.setup_model(model=model1)
+
+    params2 = open_experiment(experiment_name2, global_config_path)
+    cfg_path2 = params2['cfg_path']
+    predictor2 = Prediction(cfg_path2)
+    model2 = mnistNet()
+    predictor2.setup_model(model=model2)
+
+    params3 = open_experiment(experiment_name3, global_config_path)
+    cfg_path3 = params3['cfg_path']
+    predictor3 = Prediction(cfg_path3)
+    model3 = mnistNet()
+    predictor3.setup_model(model=model3)
+
+    params4 = open_experiment(experiment_name4, global_config_path)
+    cfg_path4 = params4['cfg_path']
+    predictor4 = Prediction(cfg_path4)
+    model4 = mnistNet()
+    predictor4.setup_model(model=model4)
+
+    params5 = open_experiment(experiment_name5, global_config_path)
+    cfg_path5 = params5['cfg_path']
+    predictor5 = Prediction(cfg_path5)
+    model5 = mnistNet()
+    predictor5.setup_model(model=model5)
+
+    os.makedirs(os.path.join(params5['target_dir'], params5['stat_log_path'], 'ensembled'), exist_ok=True)
+
+    ################### first benchmark: QUASAR ##########################
+
+    # Generate test set
+    testset_class = data_loader_pathology(params1["cfg_path"], mode='test', benchmark='QUASAR_deployMSIH')
+    test_dataset = testset_class.provide_data()
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=231,
+                                               pin_memory=True, drop_last=False, shuffle=False, num_workers=10)
+
+    print(f'\nBenchmark name: QUASAR_deployMSIH\n')
+    best_auc = 0
+    best_acu_epoch = 0
+
+    for i in range(params1['num_epochs']):
+        predictor1.setup_model(model=model1, epoch= int(i + 1))
+        predictor2.setup_model(model=model2, epoch= int(i + 1))
+        predictor3.setup_model(model=model3, epoch= int(i + 1))
+        predictor4.setup_model(model=model4, epoch= int(i + 1))
+        predictor5.setup_model(model=model5, epoch= int(i + 1))
+
+        pred_array1, target_array = predictor1.predict(test_loader)
+        pred_array2, _ = predictor2.predict(test_loader)
+        pred_array3, _ = predictor3.predict(test_loader)
+        pred_array4, _ = predictor4.predict(test_loader)
+        pred_array5, _ = predictor5.predict(test_loader)
+        pred_array = (pred_array1 + pred_array2 + pred_array3 + pred_array4 + pred_array5) / 5
+
+        patient_wise_pred_list = []
+        patient_wise_label_list = []
+
+        split_df_path = os.path.join(params1['file_path'], 'test', 'QUASAR_deployMSIH', 'org_split.csv')
+        df = pd.read_csv(split_df_path, sep=',')
+
+        for index, row in df.iterrows():
+            temp = pred_array[row['start_index']: row['end_index'] + 1]
+            temp_label = target_array[row['start_index']: row['end_index'] + 1]
+            patient_wise_pred_list.append(temp.mean(0))
+            patient_wise_label_list.append(temp_label[0])
+
+        patient_wise_pred_list = torch.stack(patient_wise_pred_list, 0)
+        targets = torch.stack(patient_wise_label_list, 0)
+        output_sigmoided = F.sigmoid(patient_wise_pred_list)
+        max_preds = output_sigmoided.argmax(dim=1)
+
+        ### evaluation metrics
+        accuracy_calculator = torchmetrics.Accuracy()
+        total_accuracy = accuracy_calculator(max_preds.cpu(), targets.cpu()).item()
+
+        fpr, tpr, thresholds = metrics.roc_curve(targets.cpu().numpy(), max_preds.cpu().numpy(), pos_label=1)
+        aucc = metrics.auc(fpr, tpr)
+
+        if aucc > best_auc:
+            best_auc = aucc
+            best_acu_epoch = i + 1
+
+        print(f'epoch {i + 1}:')
+        print(f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%\n')
+
+        # saving the training and validation stats
+        msg = f'----------------------------------------------------------------------------------------\n' \
+              f'epoch {i + 1}:' \
+              f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%\n'
+
+        with open(os.path.join(params5['target_dir'], params5['stat_log_path']) + '/ensembled/QUASAR_deployMSIH_test_results', 'a') as f:
+            f.write(msg)
+
+    print('------------------------------------------------')
+    print('------------------------------------------------')
+    print('------------------------------------------------')
+    print(f'\t epoch: {best_acu_epoch} | final best AUROC: {best_auc * 100:.2f}%')
+
+    # saving the training and validation stats
+    msg = f'----------------------------------------------------------------------------------------\n' \
+          f' Experiment name: {experiment_name1} | Benchmark name: QUASAR\n\n' \
+          f'\t epoch: {best_acu_epoch} | AUROC: {best_auc * 100:.2f}%\n' \
+          f'----------------------------------------------------------------------------------------\n'
+
+    with open(os.path.join(params5['target_dir'], params5['stat_log_path']) + '/ensembled/QUASAR_deployMSIH_final_test_result', 'a') as f:
+        f.write(msg)
+
+    ################### second benchmark: YORKSHIR ##########################
+
+    # Generate test set
+    testset_class = data_loader_pathology(params1["cfg_path"], mode='test', benchmark='YORKSHIR_deployMSIH')
+    test_dataset = testset_class.provide_data()
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=39,
+                                               pin_memory=True, drop_last=False, shuffle=False, num_workers=10)
+
+    print(f'\nBenchmark name: YORKSHIR_deployMSIH\n')
+    best_auc = 0
+    best_acu_epoch = 0
+
+    for i in range(params1['num_epochs']):
+        predictor1.setup_model(model=model1, epoch= int(i + 1))
+        predictor2.setup_model(model=model2, epoch= int(i + 1))
+        predictor3.setup_model(model=model3, epoch= int(i + 1))
+        predictor4.setup_model(model=model4, epoch= int(i + 1))
+        predictor5.setup_model(model=model5, epoch= int(i + 1))
+
+        pred_array1, target_array = predictor1.predict(test_loader)
+        pred_array2, _ = predictor2.predict(test_loader)
+        pred_array3, _ = predictor3.predict(test_loader)
+        pred_array4, _ = predictor4.predict(test_loader)
+        pred_array5, _ = predictor5.predict(test_loader)
+        pred_array = (pred_array1 + pred_array2 + pred_array3 + pred_array4 + pred_array5) / 5
+
+        patient_wise_pred_list = []
+        patient_wise_label_list = []
+
+        split_df_path = os.path.join(params1['file_path'], 'test', 'YORKSHIR_deployMSIH', 'org_split.csv')
+        df = pd.read_csv(split_df_path, sep=',')
+
+        for index, row in df.iterrows():
+            temp = pred_array[row['start_index']: row['end_index'] + 1]
+            temp_label = target_array[row['start_index']: row['end_index'] + 1]
+            patient_wise_pred_list.append(temp.mean(0))
+            patient_wise_label_list.append(temp_label[0])
+
+        patient_wise_pred_list = torch.stack(patient_wise_pred_list, 0)
+        targets = torch.stack(patient_wise_label_list, 0)
+        output_sigmoided = F.sigmoid(patient_wise_pred_list)
+        max_preds = output_sigmoided.argmax(dim=1)
+
+        ### evaluation metrics
+        accuracy_calculator = torchmetrics.Accuracy()
+        total_accuracy = accuracy_calculator(max_preds.cpu(), targets.cpu()).item()
+
+        fpr, tpr, thresholds = metrics.roc_curve(targets.cpu().numpy(), max_preds.cpu().numpy(), pos_label=1)
+        aucc = metrics.auc(fpr, tpr)
+
+        if aucc > best_auc:
+            best_auc = aucc
+            best_acu_epoch = i + 1
+
+        print(f'epoch {i + 1}:')
+        print(f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%\n')
+
+        # saving the training and validation stats
+        msg = f'----------------------------------------------------------------------------------------\n' \
+              f'epoch {i + 1}:' \
+              f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%\n'
+
+        with open(os.path.join(params5['target_dir'], params5['stat_log_path']) + '/ensembled/YORKSHIR_deployMSIH_test_results', 'a') as f:
+            f.write(msg)
+
+    print('------------------------------------------------')
+    print('------------------------------------------------')
+    print('------------------------------------------------')
+    print(f'\t epoch: {best_acu_epoch} | final best AUROC: {best_auc * 100:.2f}%')
+
+    # saving the training and validation stats
+    msg = f'----------------------------------------------------------------------------------------\n' \
+          f' Experiment name: {experiment_name1} | Benchmark name: YORKSHIR\n\n' \
+          f'\t epoch: {best_acu_epoch} | AUROC: {best_auc * 100:.2f}%\n' \
+          f'----------------------------------------------------------------------------------------\n'
+
+    with open(os.path.join(params5['target_dir'], params5['stat_log_path']) + '/ensembled/YORKSHIR_deployMSIH_final_test_result', 'a') as f:
+        f.write(msg)
+
+
+    ################### third benchmark: QUASAR + YORKSHIR ##########################
+
+    # Generate QUASAR test set
+    testset_class_QUASAR = data_loader_pathology(params1["cfg_path"], mode='test', benchmark='QUASAR_deployMSIH')
+    test_dataset_QUASAR = testset_class_QUASAR.provide_data()
+    test_loader_QUASAR = torch.utils.data.DataLoader(test_dataset_QUASAR, batch_size=231,
+                                               pin_memory=True, drop_last=False, shuffle=False, num_workers=10)
+
+    # Generate YORKSHIR test set
+    testset_class_YORKSHIR = data_loader_pathology(params1["cfg_path"], mode='test', benchmark='YORKSHIR_deployMSIH')
+    test_dataset_YORKSHIR = testset_class_YORKSHIR.provide_data()
+    test_loader_YORKSHIR = torch.utils.data.DataLoader(test_dataset_YORKSHIR, batch_size=39,
+                                              pin_memory=True, drop_last=False, shuffle=False, num_workers=10)
+
+    print(f'\nBenchmark name: QUASAR + YORKSHIR\n')
+    best_auc = 0
+    best_acu_epoch = 0
+
+    for i in range(params1['num_epochs']):
+        predictor1.setup_model(model=model1, epoch= int(i + 1))
+        predictor2.setup_model(model=model2, epoch= int(i + 1))
+        predictor3.setup_model(model=model3, epoch= int(i + 1))
+        predictor4.setup_model(model=model4, epoch= int(i + 1))
+        predictor5.setup_model(model=model5, epoch= int(i + 1))
+
+        pred_array1_QUASAR, target_array_QUASAR = predictor1.predict(test_loader_QUASAR)
+        pred_array1_YORKSHIR, target_array_YORKSHIR = predictor1.predict(test_loader_YORKSHIR)
+
+        pred_array2_QUASAR, _ = predictor2.predict(test_loader_QUASAR)
+        pred_array2_YORKSHIR, _ = predictor2.predict(test_loader_YORKSHIR)
+
+        pred_array3_QUASAR, _ = predictor3.predict(test_loader_QUASAR)
+        pred_array3_YORKSHIR, _ = predictor3.predict(test_loader_YORKSHIR)
+
+        pred_array4_QUASAR, _ = predictor4.predict(test_loader_QUASAR)
+        pred_array4_YORKSHIR, _ = predictor4.predict(test_loader_YORKSHIR)
+
+        pred_array5_QUASAR, _ = predictor5.predict(test_loader_QUASAR)
+        pred_array5_YORKSHIR, _ = predictor5.predict(test_loader_YORKSHIR)
+
+        pred_array_QUASAR = (pred_array1_QUASAR + pred_array2_QUASAR + pred_array3_QUASAR + pred_array4_QUASAR + pred_array5_QUASAR) / 5
+        pred_array_YORKSHIR = (pred_array1_YORKSHIR + pred_array2_YORKSHIR + pred_array3_YORKSHIR + pred_array4_YORKSHIR + pred_array5_YORKSHIR) / 5
+
+        patient_wise_pred_list = []
+        patient_wise_label_list = []
+
+        split_df_path_QUASAR = os.path.join(params1['file_path'], 'test', 'QUASAR_deployMSIH', 'org_split.csv')
+        df_QUASAR = pd.read_csv(split_df_path_QUASAR, sep=',')
+        for index, row in df_QUASAR.iterrows():
+            temp = pred_array_QUASAR[row['start_index']: row['end_index'] + 1]
+            temp_label = target_array_QUASAR[row['start_index']: row['end_index'] + 1]
+            patient_wise_pred_list.append(temp.mean(0))
+            patient_wise_label_list.append(temp_label[0])
+
+        split_df_path_YORKSHIR = os.path.join(params1['file_path'], 'test', 'YORKSHIR_deployMSIH', 'org_split.csv')
+        df_YORKSHIR = pd.read_csv(split_df_path_YORKSHIR, sep=',')
+        for index, row in df_YORKSHIR.iterrows():
+            temp = pred_array_YORKSHIR[row['start_index']: row['end_index'] + 1]
+            temp_label = target_array_YORKSHIR[row['start_index']: row['end_index'] + 1]
+            patient_wise_pred_list.append(temp.mean(0))
+            patient_wise_label_list.append(temp_label[0])
+
+        patient_wise_pred_list = torch.stack(patient_wise_pred_list, 0)
+        targets = torch.stack(patient_wise_label_list, 0)
+        output_sigmoided = F.sigmoid(patient_wise_pred_list)
+        max_preds = output_sigmoided.argmax(dim=1)
+
+        ### evaluation metrics
+        accuracy_calculator = torchmetrics.Accuracy()
+        total_accuracy = accuracy_calculator(max_preds.cpu(), targets.cpu()).item()
+
+        fpr, tpr, thresholds = metrics.roc_curve(targets.cpu().numpy(), max_preds.cpu().numpy(), pos_label=1)
+        aucc = metrics.auc(fpr, tpr)
+
+        if aucc > best_auc:
+            best_auc = aucc
+            best_acu_epoch = i + 1
+
+        print(f'epoch {i + 1}:')
+        print(f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%\n')
+
+        # saving the training and validation stats
+        msg = f'----------------------------------------------------------------------------------------\n' \
+              f'epoch {i + 1}:' \
+              f'\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%\n'
+
+        with open(os.path.join(params5['target_dir'], params5['stat_log_path']) + '/ensembled/QUASAR_YORKSHIR_test_results', 'a') as f:
+            f.write(msg)
+
+    print('------------------------------------------------')
+    print('------------------------------------------------')
+    print('------------------------------------------------')
+    print(f'\t epoch: {best_acu_epoch} | final best AUROC: {best_auc * 100:.2f}%')
+
+    # saving the training and validation stats
+    msg = f'----------------------------------------------------------------------------------------\n' \
+          f' Experiment name: {experiment_name1} | Benchmark name: QUASAR + YORKSHIR\n\n' \
+          f'\t epoch: {best_acu_epoch} | AUROC: {best_auc * 100:.2f}%\n' \
+          f'----------------------------------------------------------------------------------------\n'
+
+    with open(os.path.join(params5['target_dir'], params5['stat_log_path']) + '/ensembled/QUASAR_YORKSHIR_final_test_result', 'a') as f:
+        f.write(msg)
+
+
+
+
+
 
 
 
 if __name__ == '__main__':
-    delete_experiment(experiment_name='central_lr1e4_batch124_fold1', global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml")
-    main_train_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
-                  resume=False, valid=True, experiment_name='central_lr1e4_batch124_fold1', train_site='central', fold=1)
+    # delete_experiment(experiment_name='central_lr1e4_batch124_fold1', global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml")
+    # main_train_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
+    #               resume=False, valid=True, experiment_name='central_lr1e4_batch124_fold1', train_site='central', fold=1)
     # main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
     #               resume=False, valid=True, experiment_name='HE13_federated_lr4e5_batch124_fold1', HE=True, num_clients=3, precision_fractional=13, fold=1)
 
@@ -581,5 +876,11 @@ if __name__ == '__main__':
     #               experiment_name='belfast_lr1e4_batch124_fold1', benchmark='YORKSHIR_deployMSIH')
     # main_test_pathology_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
     #               experiment_name='central_lr1e4_batch124_fold1', benchmark='QUASAR_deployMSIH')
-    # main_test_pathology__allbenchmarks_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
+    # main_test_pathology_allbenchmarks_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
     #               experiment_name='HE13_federated_lr4e5_batch124_fold1')
+    main_test_pathology_crossvalid_allbenchmarks_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
+                                                                 experiment_name1='belfast_lr4e5_60epoch_batch124_fold1',
+                                                                 experiment_name2='belfast_lr4e5_60epoch_batch124_fold2',
+                                                                 experiment_name3='belfast_lr4e5_60epoch_batch124_fold3',
+                                                                 experiment_name4='belfast_lr4e5_60epoch_batch124_fold4',
+                                                                 experiment_name5='belfast_lr4e5_60epoch_batch124_fold5')
