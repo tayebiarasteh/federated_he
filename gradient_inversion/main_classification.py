@@ -1,3 +1,14 @@
+"""
+Created on May 6, 2022.
+main_classification.py
+
+@reference: https://github.com/PatrickZH/Improved-Deep-Leakage-from-Gradients
+
+@modified by: Soroosh Tayebi Arasteh <soroosh.arasteh@rwth-aachen.de>
+https://github.com/tayebiarasteh/
+
+"""
+
 import time
 import os
 import numpy as np
