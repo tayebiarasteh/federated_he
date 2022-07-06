@@ -32,14 +32,14 @@ epsilon = 1e-15
 
 
 
-def main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml", valid=False,
+def main_train_central_3D(global_config_path="federated_he/config/config.yaml", valid=False,
                   resume=False, augment=False, experiment_name='name', modality=2):
     """Main function for training + validation for directly 3d-wise
 
         Parameters
         ----------
         global_config_path: str
-            always global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml"
+            always global_config_path="federated_he/config/config.yaml"
 
         valid: bool
             if we want to do validation
@@ -100,14 +100,14 @@ def main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositori
 
 
 
-def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml", valid=False,
+def main_train_federated_3D(global_config_path="federated_he/config/config.yaml", valid=False,
                   resume=False, augment=False, experiment_name='name', modality=2, HE=False, num_clients=3, precision_fractional=15):
     """Main function for training + validation for directly 3d-wise
 
         Parameters
         ----------
         global_config_path: str
-            always global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml"
+            always global_config_path="federated_he/config/config.yaml"
 
         valid: bool
             if we want to do validation
@@ -178,7 +178,7 @@ def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Reposito
 
 
 
-def main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+def main_evaluate_3D(global_config_path="federated_he/config/config.yaml",
                     experiment_name='name', modality=2, tta=False):
     """Evaluation (for local models) for all the images using the labels and calculating metrics.
 
@@ -239,7 +239,7 @@ def main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/fe
 
 
 
-def main_evaluate_3D_multilabelbased_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+def main_evaluate_3D_multilabelbased_multiclass_output(global_config_path="federated_he/config/config.yaml",
                     experiment_name='name', modality=2, tta=False):
     """Evaluation (for local models) for all the images using the labels and calculating metrics.
 
@@ -371,7 +371,7 @@ def main_evaluate_3D_multilabelbased_multiclass_output(global_config_path="/home
 
 
 
-def main_predict_3D_multilabel_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+def main_predict_3D_multilabel_output(global_config_path="/federated_he/config/config.yaml",
                     experiment_name='name', modality=2, tta=False):
     """Prediction without evaluation for all the images.
 
@@ -427,7 +427,7 @@ def main_predict_3D_multilabel_output(global_config_path="/home/soroosh/Document
 
 
 
-def main_predict_3D_multilabelbased_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+def main_predict_3D_multilabelbased_multiclass_output(global_config_path="/federated_he/config/config.yaml",
                     experiment_name='name', modality=2, tta=False):
     """Prediction without evaluation for all the images.
 
@@ -521,7 +521,7 @@ def main_predict_3D_multilabelbased_multiclass_output(global_config_path="/home/
 
 
 
-def main_predict_3D_crossvalid_multilabelbased_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
+def main_predict_3D_crossvalid_multilabelbased_multiclass_output(global_config_path="/federated_he/config/config.yaml",
                     experiment_name1='name', experiment_name2='name', experiment_name3='name', experiment_name4='name', experiment_name5='name', modality=2, tta=False):
     """Prediction without evaluation for all the images.
     5-fold cross validation
@@ -652,21 +652,5 @@ def main_predict_3D_crossvalid_multilabelbased_multiclass_output(global_config_p
 
 
 if __name__ == '__main__':
-    # delete_experiment(experiment_name='tempppnohe', global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml")
-    # main_train_central_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #               valid=True, resume=False, augment=True, experiment_name='tempppnohe')
-    main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-                  valid=True, resume=False, augment=True, experiment_name='tempppnohe', HE=True, num_clients=2, precision_fractional=16)
-    # main_evaluate_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #             experiment_name='newdata_HE_prec16_federated_5client_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128', tta=False)
-    # main_evaluate_3D_multilabelbased_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #             experiment_name='newdata_HE_prec16_federated_5client_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128', tta=False)
-    # main_predict_3D_multilabelbased_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #             experiment_name='newdata_HE_prec16_federated_5client_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128', tta=False)
-    #             experiment_name='newdata_HE_prec13_federated_5client_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128', tta=False)
-    # main_predict_3D_crossvalid_multilabelbased_multiclass_output(global_config_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml",
-    #                                                              experiment_name1='newdata_central_batch1_unet48_flip_AWGN_gamma_lr1e4_patch128_128_128',
-    #                                                              experiment_name2='fold2_newdata_central_batch1_unet64_flip_AWGN_gamma_lr1e4_patch128_128_128',
-    #                                                              experiment_name3='fold3_newdata_central_batch1_unet64_flip_AWGN_gamma_lr1e4_patch128_128_128',
-    #                                                              experiment_name4='fold4_newdata_central_batch1_unet64_flip_AWGN_gamma_lr1e4_patch128_128_128',
-    #                                                              experiment_name5='fold5_newdata_central_batch1_unet64_flip_AWGN_gamma_lr1e4_patch128_128_128', tta=False)
+    main_train_federated_3D(global_config_path="/federated_he/config/config.yaml",
+                  valid=True, resume=False, augment=True, experiment_name='tempp', HE=True, num_clients=2, precision_fractional=16)

@@ -21,7 +21,7 @@ from collections import OrderedDict
 
 
 
-def weight_creator(file_base_dir="/home/soroosh/Documents/datasets/BraTS20/", label_num=2, modality=2):
+def weight_creator(file_base_dir="/datasets/BraTS20/", label_num=2, modality=2):
     """Inverse class frequency weight creator based on the training data.
     Note that all the label files should have the same class numbers
     and the numbers should start from 0 and be integer.
@@ -83,7 +83,7 @@ def weight_creator(file_base_dir="/home/soroosh/Documents/datasets/BraTS20/", la
 
 
 
-def mean_std_calculator(file_base_dir="/home/soroosh/Documents/datasets/BraTS20/", modality=2):
+def mean_std_calculator(file_base_dir="/datasets/BraTS20/", modality=2):
     """
 
     Parameters
@@ -140,8 +140,3 @@ def mean_std_calculator(file_base_dir="/home/soroosh/Documents/datasets/BraTS20/
 
 
 
-
-
-if __name__=='__main__':
-    weight = weight_creator(file_base_dir="/home/soroosh/Documents/datasets/BraTS20/", label_num=2, modality=2)
-    # final_mean, final_std = mean_std_calculator(file_base_dir="/home/soroosh/Documents/datasets/BraTS20/", modality=2)

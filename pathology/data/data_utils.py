@@ -18,10 +18,10 @@ import random
 
 
 def center_concatenator():
-    path = '/0home/soroosh/Documents/datasets/Histopathology/soroosh_based/train'
+    path = '/PATH'
 
-    img_output_path = '/0home/soroosh/Documents/datasets/Histopathology/soroosh_based/train/central/features.npy'
-    label_output_path = '/0home/soroosh/Documents/datasets/Histopathology/soroosh_based/train/central/labels.npy'
+    img_output_path = '/PATH/features.npy'
+    label_output_path = '/PATH/labels.npy'
 
     belfast_img = np.load(os.path.join(path, 'belfast', 'features.npy'))
     belfast_label = np.load(os.path.join(path, 'belfast', 'labels.npy'))
@@ -43,7 +43,7 @@ def center_concatenator():
 def divider_train_valid(split_percentage=10):
     """
     """
-    path = '/home/soroosh/Documents/datasets/Histopathology/soroosh_based/'
+    path = '/PATH/'
     dataset_name_list = ['belfast', 'DACHS', 'TCGA']
     fold_number = 5
 
@@ -101,10 +101,10 @@ def divider_train_valid(split_percentage=10):
 
 def split_csv():
 
-    path = '/home/soroosh/Documents/datasets/Histopathology/soroosh_based/test/YORKSHIR_deployMSIH/FULL_TEST_split.csv'
+    path = '/PATH/YORKSHIR_deployMSIH/FULL_TEST_split.csv'
     df = pd.read_csv(path, sep=',')
 
-    final_df_path = '/home/soroosh/Documents/datasets/Histopathology/soroosh_based/test/YORKSHIR_deployMSIH/org_split.csv'
+    final_df_path = '/PATH/YORKSHIR_deployMSIH/org_split.csv'
     final_df = pd.DataFrame(columns=['pat_name', 'label', 'start_index', 'end_index'])
 
     patient_list = list(df['patientID'].unique())

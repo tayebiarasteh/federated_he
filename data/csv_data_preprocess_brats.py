@@ -27,7 +27,7 @@ warnings.filterwarnings('ignore')
 
 
 class csv_preprocess_brats():
-    def __init__(self, cfg_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml"):
+    def __init__(self, cfg_path="/federated_he/config/config.yaml"):
         self.params = read_config(cfg_path)
 
     def hd5_to_nifti(self):
@@ -35,10 +35,10 @@ class csv_preprocess_brats():
         we have 4 MRI modalities and 3 labels per patient
         """
 
-        # filee = "/home/soroosh/Downloads/BraTS2020_training_data/content/data/volume_1_slice_40.h5"
-        org_df = "/home/soroosh/Downloads/BraTS2020_training_data/content/data/meta_data.csv"
-        target_base = "/home/soroosh/Documents/datasets/BraTS20/"
-        base_dir = '/home/soroosh/Downloads/BraTS2020_training_data/content/data'
+        # filee = "/PATH.h5"
+        org_df = "/PATH/meta_data.csv"
+        target_base = "/datasets/BraTS20/"
+        base_dir = '/PATH'
 
         df = pd.read_csv(org_df, sep=',')
         patient_list = df['volume'].unique().tolist()
@@ -122,8 +122,8 @@ class csv_preprocess_brats():
             number of federated clients for training
         """
 
-        path = '/home/soroosh/Documents/datasets/BraTS20/old_BraTS20/cropped/brats20_master_list.csv'
-        output_df_path = '/home/soroosh/Documents/datasets/BraTS20/old_BraTS20/master_lists/' + str(
+        path = '/PATH/brats20_master_list.csv'
+        output_df_path = '/PATH/' + str(
             num_clients) + '_clients/brats20_master_list.csv'
         os.makedirs(os.path.dirname(output_df_path), exist_ok=True)
 
@@ -270,8 +270,8 @@ class csv_preprocess_brats():
             number of federated clients for training
         """
 
-        path = '/home/soroosh/Documents/datasets/BraTS20/old_BraTS20/cropped/brats20_master_list.csv'
-        output_df_path = '/home/soroosh/Documents/datasets/BraTS20/old_BraTS20/only_valid_master_lists/' + str(
+        path = '/PATH/brats20_master_list.csv'
+        output_df_path = '/PATH/' + str(
             num_clients) + '_clients/brats20_master_list.csv'
         os.makedirs(os.path.dirname(output_df_path), exist_ok=True)
 
@@ -381,7 +381,7 @@ class csv_preprocess_brats():
 
 
 class cropper():
-    def __init__(self, cfg_path="/home/soroosh/Documents/Repositories/federated_he/config/config.yaml"):
+    def __init__(self, cfg_path="/federated_he/config/config.yaml"):
         """
         Cropping the all the images and segmentations around the brain
         Parameters
@@ -663,7 +663,7 @@ class cropper():
             # os.makedirs(os.path.dirname(path_file.replace('/original/', '/cropped/')), exist_ok=True)
             # nib.save(resultt, path_file_output) # (h, w, d)
 
-        final_df.to_csv('/home/soroosh/Documents/datasets/BraTS20/new_BraTS20/officialvalidation_padding_after_cropping.csv', sep=',', index=False)
+        final_df.to_csv('/datasets/BraTS20/new_BraTS20/officialvalidation_padding_after_cropping.csv', sep=',', index=False)
 
 
     def perform_cropping_new_data_fullsize_training(self):
@@ -765,7 +765,7 @@ class cropper():
             nib.save(resultt, path_file_output) # (h, w, d)
 
 
-        final_df.to_csv('/home/soroosh/Documents/datasets/BraTS20/new_BraTS20/officialtraining_padding_after_cropping.csv', sep=',', index=False)
+        final_df.to_csv('//datasets/BraTS20/new_BraTS20/officialtraining_padding_after_cropping.csv', sep=',', index=False)
 
 
 

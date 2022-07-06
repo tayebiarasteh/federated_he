@@ -32,14 +32,14 @@ epsilon = 1e-15
 
 
 
-def main_train_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml", valid=False,
+def main_train_pathology(global_config_path="/federated_he/pathology/config/config.yaml", valid=False,
                   resume=False, experiment_name='name', train_site='belfast', fold=1):
     """Main function for training + validation for directly 3d-wise
 
         Parameters
         ----------
         global_config_path: str
-            always global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml"
+            always global_config_path="/federated_he/pathology/config/config.yaml"
 
         resume: bool
             if we are resuming training on a model
@@ -84,14 +84,14 @@ def main_train_pathology(global_config_path="/home/soroosh/Documents/Repositorie
 
 
 
-def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml", valid=False,
+def main_train_federated_3D(global_config_path="/federated_he/pathology/config/config.yaml", valid=False,
                   resume=False, experiment_name='name', HE=False, num_clients=3, precision_fractional=15, fold=1):
     """
 
         Parameters
         ----------
         global_config_path: str
-            always global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml"
+            always global_config_path="/federated_he/pathology/config/config.yaml"
 
         valid: bool
             if we want to do validation
@@ -161,7 +161,7 @@ def main_train_federated_3D(global_config_path="/home/soroosh/Documents/Reposito
 
 
 
-def main_test_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
+def main_test_pathology(global_config_path="/federated_he/pathology/config/config.yaml",
                     experiment_name='name', benchmark='YORKSHIR_deployMSIH'):
     """Evaluation (for local models) for all the images using the labels and calculating metrics.
     Parameters
@@ -229,7 +229,7 @@ def main_test_pathology(global_config_path="/home/soroosh/Documents/Repositories
     print(f'\n\t Accuracy: {total_accuracy * 100:.2f}% | AUROC: {aucc * 100:.2f}%\n')
 
 
-def main_test_pathology_bootstrap(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
+def main_test_pathology_bootstrap(global_config_path="/federated_he/pathology/config/config.yaml",
                     experiment_name='name', benchmark='YORKSHIR_deployMSIH'):
     """Evaluation (for local models) for all the images using the labels and calculating metrics.
     Parameters
@@ -313,7 +313,7 @@ def bootstrapper(max_preds, targets):
 
 
 
-def main_test_pathology_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
+def main_test_pathology_all_epochs(global_config_path="/federated_he/pathology/config/config.yaml",
                     experiment_name='name', benchmark='YORKSHIR_deployMSIH'):
     """Evaluation (for local models) for all the images using the labels and calculating metrics.
     Parameters
@@ -402,7 +402,7 @@ def main_test_pathology_all_epochs(global_config_path="/home/soroosh/Documents/R
         f.write(msg)
 
 
-def main_test_pathology_allbenchmarks_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
+def main_test_pathology_allbenchmarks_all_epochs(global_config_path="/federated_he/pathology/config/config.yaml",
                     experiment_name='name'):
     """
     Parameters
@@ -653,7 +653,7 @@ def main_test_pathology_allbenchmarks_all_epochs(global_config_path="/home/soroo
 
 
 
-def main_test_pathology_crossvalid_allbenchmarks_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
+def main_test_pathology_crossvalid_allbenchmarks_all_epochs(global_config_path="/federated_he/pathology/config/config.yaml",
                     experiment_name1='name', experiment_name2='name', experiment_name3='name', experiment_name4='name', experiment_name5='name', tta=False):
 
     params1 = open_experiment(experiment_name1, global_config_path)
@@ -954,7 +954,7 @@ def main_test_pathology_crossvalid_allbenchmarks_all_epochs(global_config_path="
 
 
 
-def main_test_pathology_crossvalid_allbenchmarks_single_epoch(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
+def main_test_pathology_crossvalid_allbenchmarks_single_epoch(global_config_path="/federated_he/pathology/config/config.yaml",
                     experiment_name1='name', experiment_name2='name', experiment_name3='name', experiment_name4='name', experiment_name5='name', tta=False):
 
     params1 = open_experiment(experiment_name1, global_config_path)
@@ -1240,31 +1240,5 @@ def pvalue_out_of_bootstrap(biggerdf_path, smallerdf_path):
 
 
 if __name__ == '__main__':
-    # delete_experiment(experiment_name='central_lr1e4_batch124_fold1', global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml")
-    # main_train_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
-    #               resume=False, valid=True, experiment_name='central_lr1e4_batch124_fold1', train_site='central', fold=1)
-    # main_train_federated_3D(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
-    #               resume=True, valid=True, experiment_name='HE12_federated_lr4e5_100epoch_batch124_fold5', HE=True, num_clients=3, precision_fractional=12, fold=5)
-
-    # main_test_pathology(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
-    #               experiment_name='HE12_federated_lr4e5_100epoch_batch124_fold1', benchmark='YORKSHIR_deployMSIH')
-    # main_test_pathology_bootstrap(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
-    #               experiment_name='HE12_federated_lr4e5_100epoch_batch124_fold1', benchmark='YORKSHIR_deployMSIH')
-    # main_test_pathology_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
-    #               experiment_name='central_lr1e4_batch124_fold1', benchmark='QUASAR_deployMSIH')
-    # main_test_pathology_allbenchmarks_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
-    #               experiment_name='HE12_federated_lr4e5_100epoch_batch124_fold5')
-    # main_test_pathology_crossvalid_allbenchmarks_all_epochs(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
-    #                                                              experiment_name1='belfast_lr4e5_60epoch_batch124_fold1',
-    #                                                              experiment_name2='belfast_lr4e5_60epoch_batch124_fold2',
-    #                                                              experiment_name3='belfast_lr4e5_60epoch_batch124_fold3',
-    #                                                              experiment_name4='belfast_lr4e5_60epoch_batch124_fold4',
-    #                                                              experiment_name5='belfast_lr4e5_60epoch_batch124_fold5')
-    # main_test_pathology_crossvalid_allbenchmarks_single_epoch(global_config_path="/home/soroosh/Documents/Repositories/federated_he/pathology/config/config.yaml",
-    #                                                              experiment_name1='TCGA_lr4e5_60epoch_batch124_fold1',
-    #                                                              experiment_name2='TCGA_lr4e5_60epoch_batch124_fold2',
-    #                                                              experiment_name3='TCGA_lr4e5_60epoch_batch124_fold3',
-    #                                                              experiment_name4='TCGA_lr4e5_60epoch_batch124_fold4',
-    #                                                              experiment_name5='TCGA_lr4e5_60epoch_batch124_fold5')
-    pvalue_out_of_bootstrap(biggerdf_path='/home/soroosh/Documents/Repositories_target_files/federated_he/pathology/HE12_federated_lr4e5_100epoch_batch124_fold5/stat_logs/ensembled/YORKSHIR_deployMSIH_singleepoch_test_results.csv',
-                            smallerdf_path='/home/soroosh/Documents/Repositories_target_files/federated_he/pathology/central_lr4e5_60epoch_batch124_fold5/stat_logs/ensembled/YORKSHIR_deployMSIH_singleepoch_test_results.csv')
+    main_train_pathology(global_config_path="/federated_he/pathology/config/config.yaml",
+                  resume=False, valid=True, experiment_name='central_lr1e4_batch124_fold1', train_site='central', fold=1)

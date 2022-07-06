@@ -20,7 +20,7 @@ from config.serde import read_config
 
 
 
-def random_spatial_brats_augmentation(image, label, confg_path='/home/soroosh/Documents/Repositories/federated_he/config/config.yaml'):
+def random_spatial_brats_augmentation(image, label, confg_path='/federated_he/config/config.yaml'):
     """Both image and the label should be augmented
     1. Random flip
     2, 3, 4. Random affine (zoom, rotation, shift)
@@ -100,7 +100,7 @@ def random_spatial_brats_augmentation(image, label, confg_path='/home/soroosh/Do
 
 
 
-def random_intensity_brats_augmentation(image, confg_path='/home/soroosh/Documents/Repositories/federated_he/config/config.yaml'):
+def random_intensity_brats_augmentation(image, confg_path='/federated_he/config/config.yaml'):
     """Only image should be augmented
     """
     params = read_config(confg_path)
@@ -139,7 +139,7 @@ def random_intensity_brats_augmentation(image, confg_path='/home/soroosh/Documen
 
 
 
-def random_augment(image, label, confg_path='/home/soroosh/Documents/Repositories/federated_he/config/config.yaml'):
+def random_augment(image, label, confg_path='/federated_he/config/config.yaml'):
     """
     Parameters
     ----------
@@ -182,7 +182,7 @@ def random_augment(image, label, confg_path='/home/soroosh/Documents/Repositorie
 
 
 
-def patch_cropper(image, label, confg_path='/home/soroosh/Documents/Repositories/federated_he/config/config.yaml'):
+def patch_cropper(image, label, confg_path='/federated_he/config/config.yaml'):
     """
     Parameters
     ----------
