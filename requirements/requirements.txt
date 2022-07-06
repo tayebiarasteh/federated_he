@@ -1,0 +1,10 @@
+tqdm
+tensorboardx
+pandas
+scikit-image
+scikit-learn
+tensorboardX
+torchio
+pydicom
+nibabel
+torchmetrics==0.7.2
