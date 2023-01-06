@@ -1,4 +1,4 @@
-# Encrypted federated learning for secure decentralized collaboration in cancer image analysis
+# HEFL
 
 
 [![Open Source Love](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
@@ -6,7 +6,11 @@
 Overview
 ------
 
-* This is the official repository of the paper [**Encrypted federated learning for secure decentralized collaboration in cancer image analysis**](link).
+* This is the official repository of the paper [**Encrypted federated learning for secure decentralized collaboration in cancer image analysis**](https://www.medrxiv.org/content/10.1101/2022.07.28.22277288v1).
+* Pre-print version: [https://doi.org/10.1101/2022.07.28.22277288](https://doi.org/10.1101/2022.07.28.22277288)
+
+
+![](./gittt.png)
 
 
 Introduction
@@ -26,7 +30,7 @@ Main Python modules required for the software can be installed from ./requiremen
 
 ```
 $ conda env create -f environment.yml
-$ source activate HELF
+$ source activate HEFL
 $ pip install syft==0.2.9
 ```
 
@@ -67,4 +71,18 @@ The data that support the findings of this study are in part publicly available,
 
 ### In case you use this repository, please cite the original paper:
 
-D. Truhn, S. Tayebi Arasteh, O. Lester Saldanha, et al.. "*Encrypted federated learning for secure decentralized collaboration in cancer image analysis*". Science Translational Medicine, 2022 (Under review).
+D. Truhn, S. Tayebi Arasteh, O. Lester Saldanha, et al. "*Encrypted federated learning for secure decentralized collaboration in cancer image analysis*". medRxiv, https://doi.org/10.1101/2022.07.28.22277288, 2022.
+
+### BibTex
+
+    @article {HEFL2022,
+      author = {Truhn, Daniel and Tayebi Arasteh, Soroosh and Saldanha, Oliver Lester and Mueller-Franzes, Gustav and Khader, Firas and Quirke, Philip and West, Nicholas P. and Gray, Richard and Hutchins, Gordon G. A. and James, Jacqueline A. and Loughrey, Maurice B. and Salto-Tellez, Manuel and Brenner, Hermann and Brobeil, Alexander and Yuan, Tanwei and Chang-Claude, Jenny and Hoffmeister, Michael and Foersch, Sebastian and Han, Tianyu and Keil, Sebastian and Schulze-Hagen, Maximilian and Isfort, Peter and Bruners, Philipp and Kaissis, Georgios and Kuhl, Christiane and Nebelung, Sven and Kather, Jakob Nikolas},
+      title = {Encrypted federated learning for secure decentralized collaboration in cancer image analysis},
+      elocation-id = {2022.07.28.22277288},
+      year = {2022},
+      doi = {10.1101/2022.07.28.22277288},
+      publisher = {Cold Spring Harbor Laboratory Press},
+      URL = {https://www.medrxiv.org/content/early/2022/07/31/2022.07.28.22277288},
+      eprint = {https://www.medrxiv.org/content/early/2022/07/31/2022.07.28.22277288.full.pdf},
+      journal = {medRxiv}
+    }
