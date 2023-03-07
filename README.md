@@ -1,4 +1,4 @@
-# HEFL
+# Somewhat Homomorphically Encrypted Federated Learning (SHEFL)
 
 
 [![Open Source Love](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
@@ -71,7 +71,7 @@ The data that support the findings of this study are in part publicly available,
 
 ### In case you use this repository, please cite the original paper:
 
-D. Truhn, S. Tayebi Arasteh, O. Lester Saldanha, et al. "*Encrypted federated learning for secure decentralized collaboration in cancer image analysis*". medRxiv, https://doi.org/10.1101/2022.07.28.22277288, 2022.
+D. Truhn, S. Tayebi Arasteh et al. "*Encrypted federated learning for secure decentralized collaboration in cancer image analysis*". medRxiv, https://doi.org/10.1101/2022.07.28.22277288, 2022.
 
 ### BibTex
 
