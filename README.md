@@ -1,8 +1,6 @@
 # Somewhat Homomorphically Encrypted Federated Learning (SHEFL)
 
 
-[![Open Source Love](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
-
 Overview
 ------
 
@@ -30,7 +28,7 @@ Main Python modules required for the software can be installed from ./requiremen
 
 ```
 $ conda env create -f environment.yml
-$ source activate HEFL
+$ source activate SHEFL
 $ pip install syft==0.2.9
 ```
 
@@ -75,7 +73,7 @@ D. Truhn, S. Tayebi Arasteh et al. "*Encrypted federated learning for secure dec
 
 ### BibTex
 
-    @article {HEFL2022,
+    @article {SHEFL2022,
       author = {Truhn, Daniel and Tayebi Arasteh, Soroosh and Saldanha, Oliver Lester and Mueller-Franzes, Gustav and Khader, Firas and Quirke, Philip and West, Nicholas P. and Gray, Richard and Hutchins, Gordon G. A. and James, Jacqueline A. and Loughrey, Maurice B. and Salto-Tellez, Manuel and Brenner, Hermann and Brobeil, Alexander and Yuan, Tanwei and Chang-Claude, Jenny and Hoffmeister, Michael and Foersch, Sebastian and Han, Tianyu and Keil, Sebastian and Schulze-Hagen, Maximilian and Isfort, Peter and Bruners, Philipp and Kaissis, Georgios and Kuhl, Christiane and Nebelung, Sven and Kather, Jakob Nikolas},
       title = {Encrypted federated learning for secure decentralized collaboration in cancer image analysis},
       elocation-id = {2022.07.28.22277288},
