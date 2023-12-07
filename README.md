@@ -68,7 +68,7 @@ The data that support the findings of this study are in part publicly available,
 
 ### In case you use this repository, please cite the original paper:
 
-D. Truhn, S. Tayebi Arasteh et al. "*Encrypted federated learning for secure decentralized collaboration in cancer image analysis*". Medical Image Analysis, https://doi.org/10.1016/j.media.2023.103059, 2024.
+Truhn D, Tayebi Arasteh S, et al. "*Encrypted federated learning for secure decentralized collaboration in cancer image analysis*". Medical Image Analysis, https://doi.org/10.1016/j.media.2023.103059, 2024.
 
 ### BibTex
 
