@@ -1,4 +1,4 @@
-# Somewhat Homomorphically Encrypted Federated Learning (SHEFL)
+#  Encrypted federated learning for secure decentralized collaboration in cancer image analysis
 
 
 Overview
